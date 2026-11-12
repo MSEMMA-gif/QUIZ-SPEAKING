@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Flyers-Mon: Speaking Quest — Cambridge A2 Flyers</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Google Fonts: Outfit & Lexend -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- React 18 & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 55%, #020617 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .font-game {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* 3D Flashcard Flip Animation */
+    .perspective-1000 {
+      perspective: 1200px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* Pokeball & Arena Animations */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(2deg); }
+    }
+    .animate-float {
+      animation: floatSlow 3s ease-in-out infinite;
+    }
+
+    @keyframes megaAura {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.75)); transform: scale(1); }
+      50% { filter: drop-shadow(0 0 18px rgba(244, 63, 94, 0.95)); transform: scale(1.06); }
+    }
+    .animate-mega {
+      animation: megaAura 2.2s ease-in-out infinite;
+    }
+
+    @keyframes micPulse {
+      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.75); transform: scale(1); }
+      70% { box-shadow: 0 0 0 18px rgba(244, 63, 94, 0); transform: scale(1.04); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); transform: scale(1); }
+    }
+    .mic-recording {
+      animation: micPulse 1.5s infinite;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // =========================================================================
+    // 1. COMPLETE DATASET: ALL 14 TOPICS & 193 QUESTIONS (FLYERS PART 4)
+    // =========================================================================
+    const FLYERS_TOPICS = [
+      {
+        id: "topic_1",
+        number: "I",
+        title: "I. YOUR SCHOOL",
+        shortTitle: "Your School",
+        viTitle: "Trường Học Của Em",
+        icon: "🏫",
+        color: "from-sky-500 to-blue-600",
+        monster: {
+          dex: "#001",
+          name: "Pebblechick",
+          megaName: "Mega Sky-Raptor",
+          element: "Sky / Wind",
+          primaryColor: "#38bdf8",
+          secondaryColor: "#0284c7",
+          accentColor: "#fde047",
+          desc: "Linh thú khởi đầu nhanh nhẹn mang đôi cánh tri thức."
+        },
+        questions: [
+          { id: "t1_q1", q: "What time do you go to school?", vi: "Mấy giờ em đi học?", model: "I go to school at 8 o’clock." },
+          { id: "t1_q2", q: "How do you go to school?", vi: "Em đi học bằng phương tiện gì?", model: "I go to school by bus." },
+          { id: "t1_q3", q: "What’s your favourite lesson?", vi: "Tiết học yêu thích của em là gì?", model: "My favourite lesson is English." },
+          { id: "t1_q4", q: "What sports do you play at school?", vi: "Em chơi môn thể thao nào ở trường?", model: "I play football at school." },
+          { id: "t1_q5", q: "Tell me about your best friend at school?", vi: "Hãy kể về người bạn thân nhất ở trường của em?", model: "Her name is Mary. She’s tall. She has short hair." },
+          { id: "t1_q6", q: "How many children are there in your class?", vi: "Có bao nhiêu học sinh trong lớp của em?", model: "There are 30 children in my class." },
+          { id: "t1_q7", q: "What time does school start?", vi: "Trường học bắt đầu lúc mấy giờ?", model: "The school starts at 7:30." },
+          { id: "t1_q8", q: "What subject do you like best?", vi: "Em thích môn học nào nhất?", model: "I like science best." },
+          { id: "t1_q9", q: "What’s your favourite subject?", vi: "Môn học yêu thích của em là gì?", model: "My favourite subject is science." },
+          { id: "t1_q10", q: "Tell me more about your school?", vi: "Hãy kể thêm về ngôi trường của em?", model: "There are a lot of students there. We’re learning history. And we have a swimming pool." }
+        ]
+      },
+      {
+        id: "topic_2",
+        number: "II",
+        title: "II. YOUR TEACHER",
+        shortTitle: "Your Teacher",
+        viTitle: "Thầy Cô Giáo Của Em",
+        icon: "👩‍🏫",
+        color: "from-amber-500 to-orange-600",
+        monster: {
+          dex: "#002",
+          name: "Kitfox",
+          megaName: "Mega Nine-Tail Sage",
+          element: "Psychic / Fire",
+          primaryColor: "#fb923c",
+          secondaryColor: "#ea580c",
+          accentColor: "#fef08a",
+          desc: "Hồ ly thông thái tinh thông mọi môn học ở trường."
+        },
+        questions: [
+          { id: "t2_q1", q: "Who is your favourite teacher?", vi: "Giáo viên yêu thích của em là ai?", model: "My favourite teacher is Mrs South." },
+          { id: "t2_q2", q: "Why do you like her?", vi: "Tại sao em quý mến cô ấy?", model: "She is nice and kind." },
+          { id: "t2_q3", q: "What does she teach?", vi: "Cô ấy dạy môn học gì?", model: "She teaches Geography." },
+          { id: "t2_q4", q: "Tell me more about your teacher?", vi: "Hãy kể thêm về giáo viên của em?", model: "She has two children: a boy and a girl. She has blonde hair. She’s not very thin." }
+        ]
+      },
+      {
+        id: "topic_3",
+        number: "III",
+        title: "III. YOUR BEST FRIEND",
+        shortTitle: "Best Friend",
+        viTitle: "Người Bạn Thân Nhất",
+        icon: "🤝",
+        color: "from-emerald-500 to-teal-600",
+        monster: {
+          dex: "#003",
+          name: "Puppals",
+          megaName: "Mega Fenrir-Guardian",
+          element: "Earth / Loyalty",
+          primaryColor: "#34d399",
+          secondaryColor: "#059669",
+          accentColor: "#fde047",
+          desc: "Chú cún trung thành luôn đồng hành bên cạnh bạn bè."
+        },
+        questions: [
+          { id: "t3_q1", q: "What’s your best friend’s name?", vi: "Tên bạn thân nhất của em là gì?", model: "She’s called Linh." },
+          { id: "t3_q2", q: "Where do you see her?", vi: "Em thường gặp bạn ấy ở đâu?", model: "I see her at school." },
+          { id: "t3_q3", q: "Is she tall or short?", vi: "Bạn ấy cao hay thấp?", model: "She’s tall." },
+          { id: "t3_q4", q: "What do you like doing with your friend?", vi: "Em thích làm gì cùng bạn của mình?", model: "I like playing computer games with my friends." },
+          { id: "t3_q5", q: "Tell me about your best friend’s family?", vi: "Hãy kể về gia đình bạn thân của em?", model: "She lives with her mum and dad. They live in HCM city. They’ve got two cats." },
+          { id: "t3_q6", q: "How old is she?", vi: "Bạn ấy bao nhiêu tuổi?", model: "She’s 12 years old." },
+          { id: "t3_q7", q: "Where does she live?", vi: "Bạn ấy sống ở đâu?", model: "She lives in my street." },
+          { id: "t3_q8", q: "Tell me about the things you do with your best friend?", vi: "Kể về những hoạt động em làm cùng bạn thân?", model: "We go to school together. We play computer games. We go to the park." }
+        ]
+      },
+      {
+        id: "topic_4",
+        number: "IV",
+        title: "IV. YOUR MORNINGS",
+        shortTitle: "Your Mornings",
+        viTitle: "Buổi Sáng Của Em",
+        icon: "🌅",
+        color: "from-yellow-500 to-amber-600",
+        monster: {
+          dex: "#004",
+          name: "Sunmane",
+          megaName: "Mega Solar-Leon",
+          element: "Light / Flame",
+          primaryColor: "#facc15",
+          secondaryColor: "#d97706",
+          accentColor: "#ffffff",
+          desc: "Sư tử bình minh đánh thức năng lượng mỗi buổi sáng."
+        },
+        questions: [
+          { id: "t4_q1", q: "What time do you wake up?", vi: "Em thức giấc lúc mấy giờ?", model: "I wake up at 6.30." },
+          { id: "t4_q2", q: "What time do you get up?", vi: "Em ra khỏi giường lúc mấy giờ?", model: "I get up at 7 o’clock." },
+          { id: "t4_q3", q: "What do you do first?", vi: "Việc đầu tiên em làm buổi sáng là gì?", model: "I have a shower." },
+          { id: "t4_q4", q: "What do you have for breakfast?", vi: "Em ăn gì cho bữa sáng?", model: "I have bread for breakfast." },
+          { id: "t4_q5", q: "Who do you eat breakfast with?", vi: "Em ăn sáng cùng với ai?", model: "I eat breakfast with my family." },
+          { id: "t4_q6", q: "How do you go to school?", vi: "Em đến trường bằng phương tiện gì?", model: "I go to school by car." },
+          { id: "t4_q7", q: "Tell me more about your morning?", vi: "Hãy kể thêm về buổi sáng của em?", model: "My first lesson is maths. I sit next to my friend. I have lunch at school." },
+          { id: "t4_q8", q: "Tell me about your lunch?", vi: "Hãy kể về bữa ăn trưa của em?", model: "I go home for lunch. I have lunch with my mum. I usually have a sandwich and a drink." }
+        ]
+      },
+      {
+        id: "topic_5",
+        number: "V",
+        title: "V. YOUR FAMILY",
+        shortTitle: "Your Family",
+        viTitle: "Gia Đình Của Em",
+        icon: "👨‍👩‍👧‍👦",
+        color: "from-pink-500 to-rose-600",
+        monster: {
+          dex: "#005",
+          name: "Starhorn",
+          megaName: "Mega Celestial-Unicorn",
+          element: "Fairy / Heart",
+          primaryColor: "#f472b6",
+          secondaryColor: "#e11d48",
+          accentColor: "#fef08a",
+          desc: "Kỳ lân ánh sao bảo vệ hạnh phúc và tình yêu gia đình."
+        },
+        questions: [
+          { id: "t5_q1", q: "How many people are there in your family?", vi: "Gia đình em có bao nhiêu người?", model: "There are four people in my family." },
+          { id: "t5_q2", q: "What’s your father’s name?", vi: "Tên của bố em là gì?", model: "His name is Peter." },
+          { id: "t5_q3", q: "How old is your mother?", vi: "Mẹ của em bao nhiêu tuổi?", model: "She’s 40 years old." },
+          { id: "t5_q4", q: "How does your mother look like?", vi: "Mẹ của em trông như thế nào?", model: "She’s very nice." },
+          { id: "t5_q5", q: "What does your father do?", vi: "Bố của em làm nghề gì?", model: "He’s a teacher." },
+          { id: "t5_q6", q: "What sport does your father like?", vi: "Bố em thích môn thể thao nào?", model: "He likes football." },
+          { id: "t5_q7", q: "What do you do with your family on Sunday?", vi: "Em làm gì cùng gia đình vào Chủ nhật?", model: "I go shopping with my family on Sunday." },
+          { id: "t5_q8", q: "What do you like to do with your family?", vi: "Em thích làm gì cùng gia đình?", model: "I like to go to the cinema." },
+          { id: "t5_q9", q: "Do you have any brothers or sisters?", vi: "Em có anh chị em ruột không?", model: "Yes, I do." },
+          { id: "t5_q10", q: "What’s your brother’s name?", vi: "Tên anh/em trai của em là gì?", model: "His name is David." },
+          { id: "t5_q11", q: "Where do your parents live?", vi: "Bố mẹ của em sống ở đâu?", model: "They live in HCM city." },
+          { id: "t5_q12", q: "Who cooks your dinner?", vi: "Ai nấu bữa tối cho em?", model: "My mum cooks my dinner." },
+          { id: "t5_q13", q: "Who is the youngest in your family?", vi: "Ai là người nhỏ tuổi nhất nhà?", model: "The youngest in my family is me." },
+          { id: "t5_q14", q: "Tell me about your sister?", vi: "Hãy kể về chị/em gái của em?", model: "My sister’s name is Sally. She’s seven. She’s very tall. She’s a student." },
+          { id: "t5_q15", q: "Tell me about your family?", vi: "Hãy giới thiệu về gia đình em?", model: "There are four people in my family: My father, my mother, my sister and me. My father is a teacher. My mother is a housewife. I and my sister are students." },
+          { id: "t5_q16", q: "Tell me more about your family?", vi: "Hãy kể thêm về các hoạt động của gia đình em?", model: "I play with my sister. I help my mum cook dinner. We usually watch TV together in the living room." }
+        ]
+      },
+      {
+        id: "topic_6",
+        number: "VI",
+        title: "VI. YOUR HOME",
+        shortTitle: "Your Home",
+        viTitle: "Ngôi Nhà Của Em",
+        icon: "🏡",
+        color: "from-indigo-500 to-purple-600",
+        monster: {
+          dex: "#006",
+          name: "Shellfort",
+          megaName: "Mega Bastion-Tortoise",
+          element: "Stone / Shield",
+          primaryColor: "#818cf8",
+          secondaryColor: "#4f46e5",
+          accentColor: "#38bdf8",
+          desc: "Linh quy mang pháo đài kiên cố chở che tổ ấm."
+        },
+        questions: [
+          { id: "t6_q1", q: "Where do you live?", vi: "Em sống ở đâu?", model: "I live in Hoc Mon district, HCM city." },
+          { id: "t6_q2", q: "Do you live in a flat or a house?", vi: "Em sống ở căn hộ chung cư hay nhà riêng?", model: "I live in a flat." },
+          { id: "t6_q3", q: "Is your house new or old?", vi: "Ngôi nhà của em mới hay cũ?", model: "My house is old." },
+          { id: "t6_q4", q: "How many rooms are there in your house?", vi: "Nhà em có bao nhiêu phòng?", model: "There are five rooms in my house." },
+          { id: "t6_q5", q: "Is your bathroom big or small?", vi: "Phòng tắm nhà em lớn hay nhỏ?", model: "My bathroom is big." },
+          { id: "t6_q6", q: "Who do you live with?", vi: "Em sống cùng với ai?", model: "I live with my parents." },
+          { id: "t6_q7", q: "What is your favourite room?", vi: "Căn phòng yêu thích của em là phòng nào?", model: "My favourite room is living room." },
+          { id: "t6_q8", q: "What do you like about where you live?", vi: "Em thích điều gì ở nơi mình sống?", model: "There is a park and lots of trees." },
+          { id: "t6_q9", q: "What don’t you like about where you live?", vi: "Em không thích điều gì ở nơi mình sống?", model: "There are a lot of cars." },
+          { id: "t6_q10", q: "How many pictures are there in your bedroom?", vi: "Có bao nhiêu bức tranh trong phòng ngủ của em?", model: "There are 4 pictures in my bedroom." },
+          { id: "t6_q11", q: "Where do you do your homework?", vi: "Em làm bài tập về nhà ở đâu?", model: "I do my homework in the living room." },
+          { id: "t6_q12", q: "Where do you watch television?", vi: "Em xem tivi ở phòng nào?", model: "I watch television in the living room." },
+          { id: "t6_q13", q: "Where do you eat?", vi: "Em dùng bữa ở đâu?", model: "I eat in the dining room." },
+          { id: "t6_q14", q: "What do you like doing at home?", vi: "Em thích làm gì khi ở nhà?", model: "I like playing computer games at home." },
+          { id: "t6_q15", q: "Is there a garden at your house?", vi: "Nhà em có khu vườn không?", model: "Yes, there is." },
+          { id: "t6_q16", q: "Is there a laptop in your house?", vi: "Trong nhà em có máy tính xách tay không?", model: "Yes, there is." },
+          { id: "t6_q17", q: "Do you have a sofa in your living room?", vi: "Phòng khách nhà em có ghế sofa không?", model: "Yes, I do." },
+          { id: "t6_q18", q: "Who cooks in your house?", vi: "Ai là người nấu ăn trong nhà em?", model: "My mom cooks in my house." },
+          { id: "t6_q19", q: "Which room do you like best?", vi: "Em thích căn phòng nào nhất?", model: "I like my living room best." },
+          { id: "t6_q20", q: "What do you often do in the living room?", vi: "Em thường làm gì ở phòng khách?", model: "I often play board games with my sister in the living room." },
+          { id: "t6_q21", q: "Tell me about your flat?", vi: "Hãy kể về căn hộ của em?", model: "It’s got three bedrooms. There’s a balcony and a big living room." },
+          { id: "t6_q22", q: "Tell me more about the place where you live?", vi: "Hãy kể thêm về khu vực nơi em sinh sống?", model: "There is a lot of noise. My friends live near my house. There are different stores around my house." },
+          { id: "t6_q23", q: "Tell me about your living room?", vi: "Hãy mô tả phòng khách nhà em?", model: "It’s big. It’s white and brown. There’s a TV in it." },
+          { id: "t6_q24", q: "Tell me about breakfast in your house?", vi: "Hãy kể về bữa sáng tại nhà em?", model: "We have breakfast at 7 o’clock. We eat in the kitchen. We eat bread and fruit." }
+        ]
+      },
+      {
+        id: "topic_7",
+        number: "VII",
+        title: "VII. YOUR HOLIDAYS",
+        shortTitle: "Your Holidays",
+        viTitle: "Kỳ Nghỉ Của Em",
+        icon: "🏖️",
+        color: "from-cyan-500 to-blue-600",
+        monster: {
+          dex: "#007",
+          name: "Finwave",
+          megaName: "Mega Leviathan-Dolphin",
+          element: "Aqua / Wave",
+          primaryColor: "#22d3ee",
+          secondaryColor: "#0891b2",
+          accentColor: "#a5f3fc",
+          desc: "Cá heo lướt sóng chinh phục mọi đại dương kỳ nghỉ."
+        },
+        questions: [
+          { id: "t7_q1", q: "Do you like holidays?", vi: "Em có thích các kỳ nghỉ không?", model: "Yes, I do." },
+          { id: "t7_q2", q: "Do you like long or short holidays?", vi: "Em thích kỳ nghỉ dài hay ngắn?", model: "I like long holidays." },
+          { id: "t7_q3", q: "When do you have holidays?", vi: "Em có kỳ nghỉ vào mùa nào?", model: "I have holidays in the summer." },
+          { id: "t7_q4", q: "When was your last holiday?", vi: "Kỳ nghỉ gần nhất của em là khi nào?", model: "My last holiday was in August." },
+          { id: "t7_q5", q: "Who do you go on holidays with?", vi: "Em đi nghỉ mát cùng với ai?", model: "I go on holidays with my family." },
+          { id: "t7_q6", q: "Who do you see on your holidays?", vi: "Em đi thăm ai vào kỳ nghỉ?", model: "I see my grandparents on my holidays." },
+          { id: "t7_q7", q: "Where do you like going on holidays?", vi: "Em thích đi đâu vào kỳ nghỉ?", model: "I like going to the beach." },
+          { id: "t7_q8", q: "What do you like doing on holidays?", vi: "Em thích làm gì trong kỳ nghỉ?", model: "I like swimming on holidays." },
+          { id: "t7_q9", q: "What weather do you like on holidays?", vi: "Em thích thời tiết như thế nào vào kỳ nghỉ?", model: "I like sunny weather on holidays." },
+          { id: "t7_q10", q: "What time do you get up in the holidays?", vi: "Vào kỳ nghỉ em thức dậy lúc mấy giờ?", model: "I get up at 9 o’clock in the holidays." },
+          { id: "t7_q11", q: "What do you do with your friends in the holidays?", vi: "Em làm gì với bạn bè trong kỳ nghỉ?", model: "I play tennis with my friends." },
+          { id: "t7_q12", q: "Tell me about the things you do on holidays?", vi: "Hãy kể về những việc em làm trong kỳ nghỉ?", model: "I go swimming. I eat in restaurants. I go shopping. I go to the beach. I play with my friends." },
+          { id: "t7_q13", q: "Tell me about the things you like doing in the holidays?", vi: "Kể về những điều em thích làm trong kỳ nghỉ?", model: "I like going to see my grandparents. I like going to the cinema to watch my favourite movies." },
+          { id: "t7_q14", q: "Tell me more about your holidays that you would like to have?", vi: "Hãy kể thêm về kỳ nghỉ mơ ước của em?", model: "We sleep in a tent. My dad cooks fish on my fire. We pick up flowers. I go to an island. I play in the sea." },
+          { id: "t7_q15", q: "Tell me about your last holiday?", vi: "Hãy kể về kỳ nghỉ vừa qua của em?", model: "We went to the mountains. I went skiing. I had fun. We went to the sea. I played on the beach. I had fun." }
+        ]
+      },
+      {
+        id: "topic_8",
+        number: "VIII",
+        title: "VIII. YOUR BIRTHDAY",
+        shortTitle: "Your Birthday",
+        viTitle: "Sinh Nhật Của Em",
+        icon: "🎂",
+        color: "from-rose-500 to-orange-500",
+        monster: {
+          dex: "#008",
+          name: "Candledrake",
+          megaName: "Mega Ignis-Wyvern",
+          element: "Flame / Joy",
+          primaryColor: "#fb7185",
+          secondaryColor: "#e11d48",
+          accentColor: "#fde047",
+          desc: "Tiểu long phun lửa thắp sáng những ngọn nến sinh nhật."
+        },
+        questions: [
+          { id: "t8_q1", q: "When’s your birthday?", vi: "Sinh nhật của em là ngày nào?", model: "My birthday is on 20th February." },
+          { id: "t8_q2", q: "When’s your father’s birthday?", vi: "Sinh nhật của bố em là ngày nào?", model: "My father’s birthday is on 26th November." },
+          { id: "t8_q3", q: "Where do you have your party?", vi: "Em tổ chức tiệc sinh nhật ở đâu?", model: "I have my party at a cafe." },
+          { id: "t8_q4", q: "How old will you be on your next birthday?", vi: "Sinh nhật tới em sẽ bao nhiêu tuổi?", model: "I will be thirteen on my next birthday." },
+          { id: "t8_q5", q: "What do you like eating on your birthday?", vi: "Em thích ăn món gì vào ngày sinh nhật?", model: "I like eating a birthday cake on my birthday." },
+          { id: "t8_q6", q: "What present would you like for your birthday?", vi: "Em muốn nhận món quà gì cho sinh nhật?", model: "I would like a bicycle." },
+          { id: "t8_q7", q: "What birthday presents did you get last year?", vi: "Năm ngoái em đã nhận được quà sinh nhật gì?", model: "I got a robot." },
+          { id: "t8_q8", q: "Tell me more about your birthday?", vi: "Hãy kể thêm về ngày sinh nhật của em?", model: "I eat a chocolate cake. My friends give me presents. I listen to music with my friends." },
+          { id: "t8_q9", q: "Tell me about your last birthday?", vi: "Hãy kể về sinh nhật năm ngoái của em?", model: "My parents gave me a computer. I had a party. It was fun." },
+          { id: "t8_q10", q: "What do you often do on your birthday party?", vi: "Em thường làm gì trong bữa tiệc sinh nhật?", model: "I often blow out the candles, cut a birthday cake and play games with my friends." },
+          { id: "t8_q11", q: "Which presents do you like best?", vi: "Em thích món quà nào nhất?", model: "I like the bicycle best." },
+          { id: "t8_q12", q: "Who do you usually invite to the party?", vi: "Em thường mời ai đến dự tiệc?", model: "I usually invite all of my school friends." },
+          { id: "t8_q13", q: "Do you like having a birthday party? Why?", vi: "Em có thích tổ chức tiệc sinh nhật không? Tại sao?", model: "Yes, I do. Because I can have a great time with my friends and eat delicious food." }
+        ]
+      },
+      {
+        id: "topic_9",
+        number: "IX",
+        title: "IX. DAILY ROUTINES",
+        shortTitle: "Daily Routines",
+        viTitle: "Thói Quen Hàng Ngày",
+        icon: "⏰",
+        color: "from-violet-500 to-fuchsia-600",
+        monster: {
+          dex: "#009",
+          name: "Voltlynx",
+          megaName: "Mega Chrono-Panther",
+          element: "Volt / Speed",
+          primaryColor: "#c084fc",
+          secondaryColor: "#9333ea",
+          accentColor: "#fde047",
+          desc: "Báo sấm sét quản lý thời gian chính xác từng giây."
+        },
+        questions: [
+          { id: "t9_q1", q: "What time do you get up?", vi: "Em thức dậy lúc mấy giờ?", model: "I get up at 6.30 am." },
+          { id: "t9_q2", q: "What time do you go to bed?", vi: "Em đi ngủ lúc mấy giờ?", model: "I go to bed at 10 pm." },
+          { id: "t9_q3", q: "What do you have for breakfast?", vi: "Em ăn gì vào bữa sáng?", model: "I have bread for breakfast." },
+          { id: "t9_q4", q: "What do you eat for dinner?", vi: "Em ăn gì vào bữa tối?", model: "I eat rice and eggs for dinner." },
+          { id: "t9_q5", q: "Where do you have breakfast?", vi: "Em ăn sáng ở đâu?", model: "I have breakfast in the kitchen." },
+          { id: "t9_q6", q: "Where do you go after breakfast?", vi: "Sau bữa sáng em đi đâu?", model: "I go to school after breakfast." },
+          { id: "t9_q7", q: "Where do you do your homework?", vi: "Em làm bài tập về nhà ở đâu?", model: "I do my homework in my bedroom." },
+          { id: "t9_q8", q: "What do you do in the morning before school?", vi: "Buổi sáng trước khi đi học em làm gì?", model: "I have breakfast in the morning before school." },
+          { id: "t9_q9", q: "What do you wear to school?", vi: "Em mặc gì khi đến trường?", model: "I wear trousers and a shirt." },
+          { id: "t9_q10", q: "What clothes do you want to buy?", vi: "Em muốn mua trang phục gì?", model: "I want to buy some shoes." },
+          { id: "t9_q11", q: "What games do you play at the weekend?", vi: "Cuối tuần em chơi trò chơi gì?", model: "I play computer games." },
+          { id: "t9_q12", q: "Where do you go at the weekend?", vi: "Cuối tuần em đi đâu?", model: "I go to the park at the weekend." },
+          { id: "t9_q13", q: "What do you like doing at weekends?", vi: "Em thích làm gì vào cuối tuần?", model: "I like going shopping at weekends." },
+          { id: "t9_q14", q: "Where do you play with your friends?", vi: "Em chơi cùng bạn bè ở đâu?", model: "I play with my friends in the playground." },
+          { id: "t9_q15", q: "What are your hobbies?", vi: "Sở thích của em là gì?", model: "My hobbies are computer games." },
+          { id: "t9_q16", q: "What time do your lessons finish?", vi: "Các tiết học của em kết thúc lúc mấy giờ?", model: "My lessons finish at 4 o’clock." },
+          { id: "t9_q17", q: "How do you go home?", vi: "Em đi về nhà bằng cách nào?", model: "I go home by bike." },
+          { id: "t9_q18", q: "Where do you play in your house?", vi: "Em chơi ở đâu trong nhà?", model: "I play in my bedroom." },
+          { id: "t9_q19", q: "Where can you play football?", vi: "Em có thể chơi đá bóng ở đâu?", model: "I can play football in the park." },
+          { id: "t9_q20", q: "Tell me more about your mornings?", vi: "Hãy kể thêm về các buổi sáng của em?", model: "I brush my teeth. I wash my face. I get dressed and go to school." },
+          { id: "t9_q21", q: "Tell me more about your evenings?", vi: "Hãy kể thêm về các buổi tối của em?", model: "I have dinner. I do my homework. I go to bed at ten o’clock." },
+          { id: "t9_q22", q: "Tell me more about things you do at the weekend?", vi: "Hãy kể thêm về những việc em làm cuối tuần?", model: "I go shopping with my mom. I visit my grandparents. They live near my house." }
+        ]
+      },
+      {
+        id: "topic_10",
+        number: "X",
+        title: "X. YOUR HOBBIES",
+        shortTitle: "Your Hobbies",
+        viTitle: "Sở Thích Của Em",
+        icon: "🎮",
+        color: "from-blue-500 to-indigo-600",
+        monster: {
+          dex: "#010",
+          name: "Mechapup",
+          megaName: "Mega Cyber-Gundam",
+          element: "Steel / Tech",
+          primaryColor: "#60a5fa",
+          secondaryColor: "#2563eb",
+          accentColor: "#34d399",
+          desc: "Chiến binh cơ khí đam mê cờ vua, thể thao và công nghệ."
+        },
+        questions: [
+          { id: "t10_q1", q: "What is your hobby?", vi: "Sở thích của em là gì?", model: "My hobby is reading books." },
+          { id: "t10_q2", q: "Do you have any hobbies?", vi: "Em có sở thích nào không?", model: "Yes, I do." },
+          { id: "t10_q3", q: "What is your favourite colour?", vi: "Màu sắc yêu thích của em là gì?", model: "My favourite colour is blue." },
+          { id: "t10_q4", q: "What is your favourite food?", vi: "Món ăn yêu thích của em là gì?", model: "My favourite food is chicken." },
+          { id: "t10_q5", q: "What’s your favourite toy?", vi: "Đồ chơi yêu thích của em là gì?", model: "My favourite toy is a kite." },
+          { id: "t10_q6", q: "What’s your favourite thing in your bedroom?", vi: "Đồ vật em thích nhất trong phòng ngủ là gì?", model: "My favourite thing in my bedroom is a computer." },
+          { id: "t10_q7", q: "What games do you like playing?", vi: "Em thích chơi trò chơi nào?", model: "I like playing chess." },
+          { id: "t10_q8", q: "Who do you like playing chess with?", vi: "Em thích chơi cờ vua cùng với ai?", model: "I like playing chess with my grandfather." },
+          { id: "t10_q9", q: "How often do you play chess?", vi: "Em chơi cờ vua bao lâu một lần?", model: "I play chess 3 times a week." },
+          { id: "t10_q10", q: "Are you good at playing chess?", vi: "Em chơi cờ vua có giỏi không?", model: "Yes, I am." },
+          { id: "t10_q11", q: "What food don’t you like eating?", vi: "Món ăn nào em không thích ăn?", model: "I don’t like eating onions." },
+          { id: "t10_q12", q: "What don’t you like wearing?", vi: "Em không thích mặc hoặc đội thứ gì?", model: "I don’t like wearing hats." },
+          { id: "t10_q13", q: "What do you enjoy doing in your free time?", vi: "Em thích làm gì vào thời gian rảnh?", model: "I enjoy walking." },
+          { id: "t10_q14", q: "Why do you like walking?", vi: "Tại sao em thích đi bộ?", model: "Because I can get some fresh air and do exercise at the same time." },
+          { id: "t10_q15", q: "What do you like to do?", vi: "Em thích làm hoạt động gì?", model: "I like to play sports." },
+          { id: "t10_q16", q: "Do you like going skiing?", vi: "Em có thích đi trượt tuyết không?", model: "Yes, I do." },
+          { id: "t10_q17", q: "Tell me about a clothes shop that you like?", vi: "Hãy kể về một cửa hàng quần áo mà em thích?", model: "Its name is Kitty. It’s very big. I go there with my mum." },
+          { id: "t10_q18", q: "Tell me more about your hobbies?", vi: "Hãy kể thêm về các sở thích của em?", model: "I often play table tennis with my friends. We play at my house. Sometimes, I go sailing with my dad." },
+          { id: "t10_q19", q: "Tell me about what you like doing in your bedroom?", vi: "Kể về những việc em thích làm trong phòng ngủ?", model: "I play computer games. I watch television. I listen to music." }
+        ]
+      },
+      {
+        id: "topic_11",
+        number: "XI",
+        title: "XI. FOOD",
+        shortTitle: "Food & Cooking",
+        viTitle: "Ẩm Thực & Món Ăn",
+        icon: "🍳",
+        color: "from-lime-500 to-emerald-600",
+        monster: {
+          dex: "#011",
+          name: "Bamboochef",
+          megaName: "Mega Grand-Gourmet",
+          element: "Leaf / Feast",
+          primaryColor: "#a3e635",
+          secondaryColor: "#65a30d",
+          accentColor: "#fde047",
+          desc: "Gấu trúc đầu bếp chế biến mọi món ngon bổ dưỡng."
+        },
+        questions: [
+          { id: "t11_q1", q: "What is your favourite food?", vi: "Món ăn yêu thích của em là gì?", model: "My favourite food is chicken." },
+          { id: "t11_q2", q: "What is your favourite fruit?", vi: "Trái cây yêu thích của em là gì?", model: "My favourite fruit is an apple." },
+          { id: "t11_q3", q: "Do you like watermelons?", vi: "Em có thích ăn dưa hấu không?", model: "Yes, I do." },
+          { id: "t11_q4", q: "Do you like eating sweets?", vi: "Em có thích ăn kẹo ngọt không?", model: "Yes, I do." },
+          { id: "t11_q5", q: "Do you like drinking orange juice?", vi: "Em có thích uống nước cam không?", model: "Yes, I do." },
+          { id: "t11_q6", q: "Who cooks breakfast at your home?", vi: "Ai nấu bữa sáng ở nhà em?", model: "My mom cooks breakfast." },
+          { id: "t11_q7", q: "Where do you eat lunch?", vi: "Em ăn trưa ở đâu?", model: "I eat lunch at school." },
+          { id: "t11_q8", q: "Where do you eat dinner?", vi: "Em ăn tối ở đâu?", model: "I often eat dinner in the dining room." },
+          { id: "t11_q9", q: "What do you eat for breakfast?", vi: "Em ăn gì vào bữa sáng?", model: "I eat bread for breakfast." },
+          { id: "t11_q10", q: "What do you drink for breakfast?", vi: "Em uống gì vào bữa sáng?", model: "I drink milk for breakfast." },
+          { id: "t11_q11", q: "What do you eat on your birthday?", vi: "Em ăn gì vào ngày sinh nhật?", model: "I eat a birthday cake on my birthday." },
+          { id: "t11_q12", q: "Can you cook any dishes?", vi: "Em có biết nấu món ăn nào không?", model: "Yes, I can." },
+          { id: "t11_q13", q: "What dishes can you make?", vi: "Em có thể làm được món ăn gì?", model: "I can make an omelette." },
+          { id: "t11_q14", q: "How often do you make omelettes?", vi: "Em làm món trứng tráng bao lâu một lần?", model: "I make omelettes every weekends." },
+          { id: "t11_q15", q: "How do you know to make an omelette?", vi: "Làm sao em biết cách làm trứng tráng?", model: "I learn from my mom." },
+          { id: "t11_q16", q: "Do you like cooking? Why?", vi: "Em có thích nấu ăn không? Tại sao?", model: "Yes, I do. Because cooking is fun and I can help my mom." },
+          { id: "t11_q17", q: "Tell me about your breakfast?", vi: "Hãy kể về bữa sáng của em?", model: "I eat bread. I drink milk. I have breakfast at 7 o’clock in the dining room." },
+          { id: "t11_q18", q: "Tell me about the things you eat at weekends?", vi: "Hãy kể về những món em ăn vào cuối tuần?", model: "We eat fish and fries. We often eat at the restaurant near my house." }
+        ]
+      },
+      {
+        id: "topic_12",
+        number: "XII",
+        title: "XII. CLOTHES",
+        shortTitle: "Clothes & Style",
+        viTitle: "Trang Phục & Quần Áo",
+        icon: "👕",
+        color: "from-teal-500 to-cyan-600",
+        monster: {
+          dex: "#012",
+          name: "Silkweaver",
+          megaName: "Mega Royal-Paladin",
+          element: "Crystal / Aura",
+          primaryColor: "#2dd4bf",
+          secondaryColor: "#0d9488",
+          accentColor: "#fde047",
+          desc: "Hiệp sĩ dệt nên những bộ giáp lụa lấp lánh sắc màu."
+        },
+        questions: [
+          { id: "t12_q1", q: "What colours are your shirts?", vi: "Áo sơ mi của em có màu gì?", model: "My shirts are white and blue." },
+          { id: "t12_q2", q: "How many shirts have you got?", vi: "Em có bao nhiêu chiếc áo sơ mi?", model: "I have got 4 shirts." },
+          { id: "t12_q3", q: "What colours are your trousers?", vi: "Quần dài của em có màu gì?", model: "My trousers are black and brown." },
+          { id: "t12_q4", q: "When do you wear a shirt and trousers?", vi: "Khi nào em mặc áo sơ mi và quần tây?", model: "I wear them when I go to school." },
+          { id: "t12_q5", q: "Do you like wearing jeans?", vi: "Em có thích mặc quần jeans không?", model: "Yes, I do." },
+          { id: "t12_q6", q: "How often do you buy new clothes?", vi: "Em mua quần áo mới bao lâu một lần?", model: "I buy new clothes 3 or 4 times a year." },
+          { id: "t12_q7", q: "Do you wear black shoes?", vi: "Em có đi giày màu đen không?", model: "Yes, I do." },
+          { id: "t12_q8", q: "Do you wear glasses?", vi: "Em có đeo kính không?", model: "Yes, I do." },
+          { id: "t12_q9", q: "Are you wearing brown trousers today?", vi: "Hôm nay em có mặc quần màu nâu không?", model: "No, I’m not." },
+          { id: "t12_q10", q: "Are your trousers old or new?", vi: "Quần của em cũ hay mới?", model: "My trousers are old." },
+          { id: "t12_q11", q: "What clothes do you wear at school?", vi: "Em mặc trang phục gì ở trường?", model: "I always wear black trousers and white shirts at school." },
+          { id: "t12_q12", q: "What do you wear at home?", vi: "Em mặc gì khi ở nhà?", model: "I often wear jeans and T-shirts at home." },
+          { id: "t12_q13", q: "Tell me about your favorite clothing item?", vi: "Hãy kể về món đồ quần áo em thích nhất?", model: "I like my T-shirt best. It’s blue. It has a picture of a dolphin on it." }
+        ]
+      },
+      {
+        id: "topic_13",
+        number: "XIII",
+        title: "XIII. ANIMAL",
+        shortTitle: "Animals & Pets",
+        viTitle: "Động Vật & Thú Cưng",
+        icon: "🐾",
+        color: "from-emerald-500 to-green-600",
+        monster: {
+          dex: "#013",
+          name: "Louispaw",
+          megaName: "Mega Astral-Wolf",
+          element: "Nature / Spirit",
+          primaryColor: "#4ade80",
+          secondaryColor: "#16a34a",
+          accentColor: "#fef08a",
+          desc: "Chú cún thông minh Louis mang sức mạnh của thiên nhiên."
+        },
+        questions: [
+          { id: "t13_q1", q: "Do you have a pet?", vi: "Em có nuôi thú cưng không?", model: "Yes, I do." },
+          { id: "t13_q2", q: "What pet do you have?", vi: "Em nuôi con vật gì?", model: "I have a dog." },
+          { id: "t13_q3", q: "What’s your pet’s name?", vi: "Tên thú cưng của em là gì?", model: "His name is Louis." },
+          { id: "t13_q4", q: "What does Louis like to do?", vi: "Louis thích làm gì?", model: "He likes to play football." },
+          { id: "t13_q5", q: "Where did you get it?", vi: "Em có được nó từ đâu?", model: "I got it from a pet shop." },
+          { id: "t13_q6", q: "When did you have it?", vi: "Em bắt đầu nuôi nó từ khi nào?", model: "I had it last year." },
+          { id: "t13_q7", q: "Who bought it for you?", vi: "Ai đã mua thú cưng cho em?", model: "My dad bought it for me." },
+          { id: "t13_q8", q: "What kind of food does Louis like eating?", vi: "Louis thích ăn loại thức ăn gì?", model: "He likes eating meat." },
+          { id: "t13_q9", q: "How often do you wash your dog?", vi: "Em tắm cho chú chó bao lâu một lần?", model: "I wash him once a week." },
+          { id: "t13_q10", q: "Would you like to have another pet?", vi: "Em có muốn nuôi thêm thú cưng khác không?", model: "Yes, I would." },
+          { id: "t13_q11", q: "Which pet would you like to have?", vi: "Em muốn nuôi thêm con vật nào?", model: "I’d like to have a fish." },
+          { id: "t13_q12", q: "Tell me more about your pet?", vi: "Hãy kể thêm về thú cưng của em?", model: "Louis likes eating and playing. He’s black and white. He’s very clever." }
+        ]
+      },
+      {
+        id: "topic_14",
+        number: "XIV",
+        title: "XIV. PLACES",
+        shortTitle: "Places & City",
+        viTitle: "Địa Điểm & Thành Phố",
+        icon: "🏙️",
+        color: "from-purple-500 to-indigo-600",
+        monster: {
+          dex: "#014",
+          name: "Atlaswing",
+          megaName: "Mega Horizon-Dragon",
+          element: "Sky / Voyager",
+          primaryColor: "#a78bfa",
+          secondaryColor: "#7c3aed",
+          accentColor: "#38bdf8",
+          desc: "Rồng du hành khám phá mọi thành phố, công viên và bãi biển."
+        },
+        questions: [
+          { id: "t14_q1", q: "Where do you live?", vi: "Em sống ở thành phố nào?", model: "I live in Ho Chi Minh city." },
+          { id: "t14_q2", q: "Where is the coffee shop?", vi: "Quán cà phê nằm ở đâu?", model: "It’s next to the supermarket." },
+          { id: "t14_q3", q: "Do you like going to the coffee shop?", vi: "Em có thích đến quán cà phê không?", model: "Yes, I do." },
+          { id: "t14_q4", q: "What is your favourite place in your city?", vi: "Địa điểm yêu thích của em ở thành phố là đâu?", model: "My favourite place is in the park." },
+          { id: "t14_q5", q: "What can you do in the park?", vi: "Em có thể làm gì ở công viên?", model: "I can walk my dog and play badminton with my dad." },
+          { id: "t14_q6", q: "Where is your favourite place to go?", vi: "Nơi em thích đi đến nhất là đâu?", model: "My favourite place to go is the countryside." },
+          { id: "t14_q7", q: "Do you go there alone?", vi: "Em có đi đến đó một mình không?", model: "No, I don’t. I go there with my friends." },
+          { id: "t14_q8", q: "Tell me more about your favourite place?", vi: "Hãy kể thêm về địa điểm yêu thích của em?", model: "My grandparent lives there. I go there every summer. I stay there for three weeks." },
+          { id: "t14_q9", q: "Tell me about what you do at weekends in your city?", vi: "Kể về những việc em làm cuối tuần ở thành phố?", model: "I go shopping with my mother. She buys food and I buy comics." },
+          { id: "t14_q10", q: "Do you prefer to travel to the beach or the mountain?", vi: "Em thích đi du lịch biển hay đi núi hơn?", model: "I prefer to travel to the beach." },
+          { id: "t14_q11", q: "Why do you like traveling to the beach?", vi: "Tại sao em thích đi du lịch biển?", model: "Because I can go swimming and watch dolphins on the boat trip." }
+        ]
+      }
+    ];
+
+    // Legendary Boss #015 Monster (Unlocked at 15 Shields or Boss Clear)
+    const BOSS_MONSTER_015 = {
+      dex: "#015",
+      name: "Aether-Phoenix",
+      megaName: "Mega Sovereign Aether-Phoenix",
+      element: "Legendary / 15 Shields",
+      primaryColor: "#f59e0b",
+      secondaryColor: "#dc2626",
+      accentColor: "#fef08a",
+      desc: "Phượng Hoàng Huyền Thoại biểu tượng cho đỉnh cao 15 Khiên Cambridge A2 Flyers!"
+    };
+
+    // Total questions helper
+    const TOTAL_QUESTIONS_COUNT = FLYERS_TOPICS.reduce((acc, t) => acc + t.questions.length, 0);
+
+    // =========================================================================
+    // 2. BESPOKE SVG MONSTER RENDERER (POKÉMON-STYLE BASE & MEGA FORMS)
+    // =========================================================================
+    function MonsterSprite({ monster, isMega = false, locked = false, size = 84 }) {
+      const pColor = locked ? "#334155" : monster.primaryColor;
+      const sColor = locked ? "#1e293b" : monster.secondaryColor;
+      const aColor = locked ? "#475569" : monster.accentColor;
+
+      return (
+        <div
+          className={`relative inline-flex items-center justify-center ${
+            locked ? "opacity-60 grayscale" : isMega ? "animate-mega" : "animate-float"
+          }`}
+          style={{ width: size, height: size }}
+        >
+          {/* Mega Evolution Aura Ring */}
+          {!locked && isMega && (
+            <div
+              className="absolute inset-0 rounded-full blur-md opacity-70"
+              style={{ background: `radial-gradient(circle, ${aColor}, ${pColor}, transparent)` }}
+            />
+          )}
+
+          <svg viewBox="0 0 120 120" className="w-full h-full relative z-10 overflow-visible">
+            <defs>
+              <linearGradient id={`grad_${monster.dex}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={pColor} />
+                <stop offset="100%" stopColor={sColor} />
+              </linearGradient>
+            </defs>
+
+            {/* Mega Wings / Spikes */}
+            {!locked && isMega && (
+              <g fill={aColor} opacity="0.9">
+                <polygon points="10,55 32,35 28,68" />
+                <polygon points="110,55 88,35 92,68" />
+                <polygon points="60,4 50,24 70,24" />
+              </g>
+            )}
+
+            {/* Ears / Horns */}
+            <polygon points="32,42 22,16 48,30" fill={sColor} />
+            <polygon points="88,42 98,16 72,30" fill={sColor} />
+            <polygon points="33,38 26,21 44,31" fill={aColor} />
+            <polygon points="87,38 94,21 76,31" fill={aColor} />
+
+            {/* Main Creature Body */}
+            <ellipse cx="60" cy="68" rx="34" ry="32" fill={`url(#grad_${monster.dex})`} stroke="#0f172a" strokeWidth="3" />
+
+            {/* Belly Patch */}
+            <ellipse cx="60" cy="76" rx="20" ry="18" fill={aColor} opacity="0.85" />
+
+            {/* Crest / Crown */}
+            <path d="M48 36 L60 18 L72 36 Z" fill={aColor} stroke="#0f172a" strokeWidth="2" />
+
+            {/* Eyes */}
+            {locked ? (
+              <g stroke="#94a3b8" strokeWidth="3" strokeLinecap="round">
+                <line x1="42" y1="56" x2="50" y2="62" />
+                <line x1="50" y1="56" x2="42" y2="62" />
+                <line x1="70" y1="56" x2="78" y2="62" />
+                <line x1="78" y1="56" x2="70" y2="62" />
+              </g>
+            ) : (
+              <g>
+                <circle cx="46" cy="58" r="6.5" fill="#0f172a" />
+                <circle cx="74" cy="58" r="6.5" fill="#0f172a" />
+                <circle cx="48" cy="56" r="2.5" fill="#ffffff" />
+                <circle cx="76" cy="56" r="2.5" fill="#ffffff" />
+                {/* Cute cheeks */}
+                <circle cx="37" cy="65" r="3.5" fill="#fb7185" opacity="0.7" />
+                <circle cx="83" cy="65" r="3.5" fill="#fb7185" opacity="0.7" />
+              </g>
+            )}
+
+            {/* Smile / Beak */}
+            <path d="M54 67 Q60 73 66 67" fill="none" stroke="#0f172a" strokeWidth="2.8" strokeLinecap="round" />
+
+            {/* Feet */}
+            <ellipse cx="45" cy="99" rx="9" ry="5" fill={sColor} stroke="#0f172a" strokeWidth="2.5" />
+            <ellipse cx="75" cy="99" rx="9" ry="5" fill={sColor} stroke="#0f172a" strokeWidth="2.5" />
+
+            {/* Lock Icon Overlay if locked */}
+            {locked && (
+              <g transform="translate(46, 72)">
+                <rect x="3" y="10" width="22" height="16" rx="4" fill="#0f172a" stroke="#94a3b8" strokeWidth="2" />
+                <path d="M8 10 V6 A6 6 0 0 1 20 6 V10" fill="none" stroke="#94a3b8" strokeWidth="2.5" />
+              </g>
+            )}
+          </svg>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // 3. WEB AUDIO SYNTHESIZER (GAME SFX)
+    // =========================================================================
+    const playGameSFX = (type) => {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        const playTone = (freq, startOffset, duration, wave = "sine", vol = 0.14) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = wave;
+          osc.frequency.setValueAtTime(freq, now + startOffset);
+          gain.gain.setValueAtTime(vol, now + startOffset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + startOffset);
+          osc.stop(now + startOffset + duration);
+        };
+
+        if (type === "tap") {
+          playTone(620, 0, 0.07, "sine", 0.12);
+        } else if (type === "flip") {
+          playTone(380, 0, 0.08, "triangle", 0.12);
+          playTone(580, 0.05, 0.1, "triangle", 0.12);
+        } else if (type === "success") {
+          playTone(523.25, 0, 0.12, "triangle", 0.16);
+          playTone(659.25, 0.09, 0.12, "triangle", 0.16);
+          playTone(783.99, 0.18, 0.24, "triangle", 0.18);
+        } else if (type === "catch") {
+          [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+            playTone(f, i * 0.09, 0.32, "triangle", 0.18);
+          });
+        } else if (type === "error") {
+          playTone(240, 0, 0.16, "sawtooth", 0.1);
+          playTone(190, 0.12, 0.22, "sawtooth", 0.1);
+        }
+      } catch (err) {
+        // Ignore audio errors on restricted devices
+      }
+    };
+
+    // =========================================================================
+    // 4. INTONATION & WORD-BY-WORD GRADING ENGINE
+    // =========================================================================
+    const STOP_WORDS = new Set(["i", "a", "an", "the", "is", "are", "am", "to", "in", "on", "at", "by", "with", "and", "my", "her", "his", "it", "it's", "she", "he", "we", "they", "there"]);
+
+    // Builds stressed words + intonation arrows (↗ ↘) for Flashcard back
+    function buildIntonationTokens(sentence) {
+      const rawTokens = sentence.split(/\s+/).filter(Boolean);
+      return rawTokens.map((tok, idx) => {
+        const clean = tok.toLowerCase().replace(/[^a-z0-9']/g, "");
+        const hasComma = tok.includes(",");
+        const hasPeriod = tok.includes(".") || tok.includes("!");
+        const isLast = idx === rawTokens.length - 1;
+        const isStressed = clean.length > 0 && !STOP_WORDS.has(clean);
+
+        let arrow = "";
+        if (hasComma) arrow = "↗";
+        else if (hasPeriod || isLast) arrow = "↘";
+
+        return { text: tok, isStressed, arrow };
+      });
+    }
+
+    // Normalizes text & compares spoken answer against model answer word-by-word
+    const SYNONYM_EQUIVALENTS = {
+      "8": ["eight"],
+      "eight": ["8"],
+      "7": ["seven"],
+      "seven": ["7"],
+      "6": ["six"],
+      "six": ["6"],
+      "9": ["nine"],
+      "nine": ["9"],
+      "10": ["ten"],
+      "ten": ["10"],
+      "12": ["twelve"],
+      "twelve": ["12"],
+      "30": ["thirty"],
+      "thirty": ["30"],
+      "40": ["forty"],
+      "forty": ["40"],
+      "4": ["four"],
+      "four": ["4"],
+      "3": ["three"],
+      "three": ["3"],
+      "20th": ["twentieth", "20"],
+      "26th": ["twenty-sixth", "twenty", "26"],
+      "o’clock": ["oclock", "o'clock", "clock"],
+      "o'clock": ["oclock", "o’clock", "clock"],
+      "oclock": ["o’clock", "o'clock"],
+      "mum": ["mom", "mother"],
+      "mom": ["mum", "mother"],
+      "favourite": ["favorite"],
+      "favorite": ["favourite"],
+      "colours": ["colors"],
+      "colour": ["color"],
+      "hcm": ["ho", "chi", "minh"],
+      "she’s": ["shes", "she", "is"],
+      "she's": ["shes", "she", "is"],
+      "he’s": ["hes", "he", "is"],
+      "he's": ["hes", "he", "is"],
+      "it’s": ["its", "it", "is"],
+      "it's": ["its", "it", "is"],
+      "i’d": ["id", "i", "would"],
+      "i'd": ["id", "i", "would"],
+      "don’t": ["dont", "do", "not"],
+      "don't": ["dont", "do", "not"],
+      "i’m": ["im", "i", "am"],
+      "i'm": ["im", "i", "am"],
+      "we’re": ["were", "we", "are"],
+      "we're": ["were", "we", "are"],
+      "they’ve": ["theyve", "they", "have"],
+      "they've": ["theyve", "they", "have"],
+      "there’s": ["theres", "there", "is"],
+      "there's": ["theres", "there", "is"],
+      "what’s": ["whats", "what", "is"],
+      "what's": ["whats", "what", "is"],
+      "when’s": ["whens", "when", "is"],
+      "when's": ["whens", "when", "is"],
+      "7:30": ["seven", "thirty", "730"],
+      "6.30": ["six", "thirty", "630"]
+    };
+
+    function evaluateSpeakingWordByWord(modelAnswer, userTranscript) {
+      const cleanStr = (s) =>
+        s
+          .toLowerCase()
+          .replace(/[.,!?;:"]/g, " ")
+          .replace(/’/g, "'")
+          .split(/\s+/)
+          .filter(Boolean);
+
+      const userWords = cleanStr(userTranscript);
+      const userSet = new Set(userWords);
+
+      const modelRawTokens = modelAnswer.split(/\s+/).filter(Boolean);
+      let matchedCount = 0;
+      const missingWords = [];
+
+      const wordResults = modelRawTokens.map((rawWord) => {
+        const norm = rawWord.toLowerCase().replace(/[.,!?;:"]/g, "").replace(/’/g, "'");
+        let isMatch = userSet.has(norm);
+
+        if (!isMatch && SYNONYM_EQUIVALENTS[norm]) {
+          isMatch = SYNONYM_EQUIVALENTS[norm].some((alt) => userSet.has(alt));
+        }
+        // Check alphanumeric strip
+        if (!isMatch) {
+          const alphaOnly = norm.replace(/[^a-z0-9]/g, "");
+          isMatch = userWords.some((uw) => uw.replace(/[^a-z0-9]/g, "") === alphaOnly);
+        }
+
+        if (isMatch) {
+          matchedCount++;
+        } else {
+          missingWords.push(rawWord.replace(/[.,!?]/g, ""));
+        }
+
+        return {
+          word: rawWord,
+          matched: isMatch
+        };
+      });
+
+      const accuracy = modelRawTokens.length > 0
+        ? Math.round((matchedCount / modelRawTokens.length) * 100)
+        : 0;
+
+      let stars = 1;
+      if (accuracy >= 90) stars = 5;
+      else if (accuracy >= 75) stars = 4;
+      else if (accuracy >= 55) stars = 3;
+      else if (accuracy >= 30) stars = 2;
+
+      let feedbackVi = "";
+      if (userWords.length === 0) {
+        feedbackVi = "Chưa ghi nhận được giọng nói. Em hãy bấm Mic nói to rõ hoặc nhập chữ vào khung dự phòng nhé!";
+      } else if (accuracy >= 85) {
+        feedbackVi = `Tuyệt vời (${accuracy}%)! Em phát âm chuẩn xác các từ khóa Cambridge Flyers.`;
+      } else if (accuracy >= 55) {
+        feedbackVi = `Khá tốt (${accuracy}%), nhưng em còn thiếu/sai từ: "${missingWords.slice(0, 4).join(", ")}". Hãy nghe mẫu và nói lại nhé!`;
+      } else {
+        feedbackVi = `Cần luyện thêm (${accuracy}%). Em bị thiếu nhiều từ khóa: "${missingWords.slice(0, 5).join(", ")}". Hãy bấm nghe mẫu và đọc nhại (Shadowing)!`;
+      }
+
+      return {
+        accuracy,
+        stars,
+        wordResults,
+        missingWords,
+        feedbackVi,
+        passed: accuracy >= 70
+      };
+    }
+
+    // =========================================================================
+    // 5. DEFAULT GOOGLE APPS SCRIPT CODE FOR TEACHER SETUP MODAL
+    // =========================================================================
+    const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var data = JSON.parse(e.postData.contents);
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        "Thời Gian",
+        "Tên Học Sinh",
+        "Lớp",
+        "Hoạt Động / Chủ Đề",
+        "Điểm XP",
+        "Số Khiên / 15",
+        "Số Câu Đã Thuộc / 193",
+        "Chuỗi Streak",
+        "Linh Thú Đã Thu Phục"
+      ]);
+    }
+    sheet.appendRow([
+      new Date().toLocaleString("vi-VN"),
+      data.studentName || "Học sinh",
+      data.studentClass || "Flyers",
+      data.activity || "Luyện tập",
+      data.xp || 0,
+      data.shields || 0,
+      data.memorizedCount || 0,
+      data.streak || 0,
+      data.caughtMonsters || ""
+    ]);
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+    // =========================================================================
+    // 6. MAIN APPLICATION COMPONENT
+    // =========================================================================
+    function App() {
+      // --- Persistent Student Profile & Progress ---
+      const [studentName, setStudentName] = useState(() => localStorage.getItem("fm_name") || "");
+      const [studentClass, setStudentClass] = useState(() => localStorage.getItem("fm_class") || "");
+      const [sheetUrl, setSheetUrl] = useState(() => localStorage.getItem("fm_sheet_url") || "");
+      const [showProfileModal, setShowProfileModal] = useState(() => !localStorage.getItem("fm_name"));
+
+      const [xp, setXp] = useState(() => parseInt(localStorage.getItem("fm_xp") || "0", 10));
+      const [streak, setStreak] = useState(() => parseInt(localStorage.getItem("fm_streak") || "0", 10));
+      const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem("fm_best_streak") || "0", 10));
+
+      // Per-question progress: { [qId]: { flashcardDone: bool, builderDone: bool, arenaStars: number (0..5) } }
+      const [qProgress, setQProgress] = useState(() => {
+        try {
+          return JSON.parse(localStorage.getItem("fm_q_progress") || "{}");
+        } catch {
+          return {};
+        }
+      });
+
+      // --- Navigation & Active Mode ---
+      // mainTab: 'topics' | 'dex' | 'boss'
+      const [mainTab, setMainTab] = useState("topics");
+      const [selectedTopicId, setSelectedTopicId] = useState("topic_1");
+      // stepTab: 1 (Flashcard 3D) | 2 (Sentence Builder) | 3 (Speaking Arena)
+      const [stepTab, setStepTab] = useState(1);
+      const [qIndex, setQIndex] = useState(0);
+
+      // --- Step 1: 3D Flashcard State ---
+      const [isFlipped, setIsFlipped] = useState(false);
+
+      // --- Step 2: Sentence Builder State ---
+      const [builderPool, setBuilderPool] = useState([]);
+      const [builderChosen, setBuilderChosen] = useState([]);
+      const [builderStatus, setBuilderStatus] = useState("playing"); // 'playing' | 'correct' | 'wrong'
+
+      // --- Step 3: Speaking Arena State ---
+      const [isRecording, setIsRecording] = useState(false);
+      const [spokenInput, setSpokenInput] = useState("");
+      const [arenaResult, setArenaResult] = useState(null);
+      const [shadowingCompleted, setShadowingCompleted] = useState(false);
+      const [micSupported, setMicSupported] = useState(true);
+
+      // --- Boss 15-Shield Mode State ---
+      const [bossQuestions, setBossQuestions] = useState([]);
+      const [bossIdx, setBossIdx] = useState(0);
+      const [bossScoreShields, setBossScoreShields] = useState(0);
+      const [bossFinished, setBossFinished] = useState(false);
+
+      // --- UI Notifications & Modals ---
+      const [toast, setToast] = useState(null);
+      const [catchPopup, setCatchPopup] = useState(null); // { monster, isMega, isEvolution }
+      const [syncStatus, setSyncStatus] = useState("idle"); // 'idle' | 'syncing' | 'synced'
+      const [showScriptHelp, setShowScriptHelp] = useState(false);
+
+      const recognitionRef = useRef(null);
+      const prevCaughtRef = useRef({});
+
+      // Helper: Show non-blocking Toast
+      const triggerToast = (msg, type = "info") => {
+        setToast({ msg, type, id: Date.now() });
+      };
+
+      useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), 3200);
+        return () => clearTimeout(t);
+      }, [toast]);
+
+      // Save progress to localStorage
+      useEffect(() => {
+        localStorage.setItem("fm_name", studentName);
+        localStorage.setItem("fm_class", studentClass);
+        localStorage.setItem("fm_sheet_url", sheetUrl);
+        localStorage.setItem("fm_xp", String(xp));
+        localStorage.setItem("fm_streak", String(streak));
+        localStorage.setItem("fm_best_streak", String(bestStreak));
+        localStorage.setItem("fm_q_progress", JSON.stringify(qProgress));
+      }, [studentName, studentClass, sheetUrl, xp, streak, bestStreak, qProgress]);
+
+      // Active Topic Object
+      const activeTopic = useMemo(
+        () => FLYERS_TOPICS.find((t) => t.id === selectedTopicId) || FLYERS_TOPICS[0],
+        [selectedTopicId]
+      );
+
+      // Current Question (either Topic mode or Boss mode)
+      const currentQuestion = useMemo(() => {
+        if (mainTab === "boss" && bossQuestions.length > 0) {
+          return bossQuestions[bossIdx] || bossQuestions[0];
+        }
+        return activeTopic.questions[qIndex] || activeTopic.questions[0];
+      }, [mainTab, bossQuestions, bossIdx, activeTopic, qIndex]);
+
+      // Compute Topic Mastery, Caught Monsters, Mega Evolutions, and 15 Cambridge Shields
+      const stats = useMemo(() => {
+        let memorizedCount = 0;
+        let totalArenaStars = 0;
+        let arenaQuestionsAttempted = 0;
+
+        Object.values(qProgress).forEach((entry) => {
+          if (entry.flashcardDone || entry.builderDone || (entry.arenaStars && entry.arenaStars >= 4)) {
+            memorizedCount++;
+          }
+          if (entry.arenaStars && entry.arenaStars > 0) {
+            totalArenaStars += entry.arenaStars;
+            arenaQuestionsAttempted++;
+          }
+        });
+
+        const topicStatuses = FLYERS_TOPICS.map((t) => {
+          const total = t.questions.length;
+          let doneCount = 0;
+          let arenaPassedCount = 0;
+          t.questions.forEach((q) => {
+            const p = qProgress[q.id];
+            if (p && (p.flashcardDone || p.builderDone || (p.arenaStars && p.arenaStars >= 3))) {
+              doneCount++;
+            }
+            if (p && p.arenaStars && p.arenaStars >= 4) {
+              arenaPassedCount++;
+            }
+          });
+          const pct = Math.round((doneCount / total) * 100);
+          // Topic monster is caught if student completes at least 50% of topic questions (or >= 4 questions)
+          const caught = doneCount >= Math.min(4, total) || pct >= 50;
+          // Mega evolution unlocks at >= 80% topic mastery OR bestStreak >= 5
+          const isMega = caught && (pct >= 80 || bestStreak >= 5 || arenaPassedCount >= Math.ceil(total * 0.7));
+          return {
+            topic: t,
+            total,
+            doneCount,
+            pct,
+            caught,
+            isMega
+          };
+        });
+
+        const caughtTopicMonsters = topicStatuses.filter((s) => s.caught);
+
+        // Calculate 15 Cambridge Shields (0 to 15)
+        // Combines caught monsters + arena stars + boss exam score
+        const calculatedShields = Math.min(
+          15,
+          Math.max(
+            bossScoreShields,
+            Math.floor(caughtTopicMonsters.length * 0.75 + totalArenaStars / 18)
+          )
+        );
+
+        const bossCaught = calculatedShields >= 15;
+        const bossMega = bossCaught && (bestStreak >= 8 || memorizedCount >= 120);
+
+        const level = Math.floor(xp / 100) + 1;
+
+        return {
+          memorizedCount,
+          totalArenaStars,
+          arenaQuestionsAttempted,
+          topicStatuses,
+          caughtCount: caughtTopicMonsters.length + (bossCaught ? 1 : 0),
+          shields: calculatedShields,
+          bossCaught,
+          bossMega,
+          level
+        };
+      }, [qProgress, xp, bestStreak, bossScoreShields]);
+
+      // Detect newly caught Flyers-Mon or Mega Evolution and trigger celebration popup!
+      useEffect(() => {
+        stats.topicStatuses.forEach((st) => {
+          const prev = prevCaughtRef.current[st.topic.id];
+          if (prev) {
+            if (!prev.caught && st.caught) {
+              playGameSFX("catch");
+              setCatchPopup({
+                monster: st.topic.monster,
+                isMega: st.isMega,
+                isEvolution: false,
+                topicTitle: st.topic.title
+              });
+              syncToGoogleSheets(`Thu phục ${st.topic.monster.name} (${st.topic.title})`);
+            } else if (prev.caught && !prev.isMega && st.isMega) {
+              playGameSFX("catch");
+              setCatchPopup({
+                monster: st.topic.monster,
+                isMega: true,
+                isEvolution: true,
+                topicTitle: st.topic.title
+              });
+              syncToGoogleSheets(`Tiến hóa ${st.topic.monster.megaName}`);
+            }
+          }
+          prevCaughtRef.current[st.topic.id] = { caught: st.caught, isMega: st.isMega };
+        });
+      }, [stats.topicStatuses]);
+
+      // =====================================================================
+      // 7. SPEECH SYNTHESIS (TTS) & SPEECH RECOGNITION (STT)
+      // =====================================================================
+      const speakEnglish = (text, rate = 0.92) => {
+        if (!("speechSynthesis" in window)) {
+          triggerToast("Trình duyệt không hỗ trợ đọc âm thanh.", "error");
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "en-US";
+        utter.rate = rate;
+        utter.pitch = 1.04;
+
+        // Prefer natural English voices if available
+        const voices = window.speechSynthesis.getVoices();
+        const preferred =
+          voices.find((v) => v.lang.includes("en-US") && (v.name.includes("Google") || v.name.includes("Samantha") || v.name.includes("Natural"))) ||
+          voices.find((v) => v.lang.startsWith("en"));
+        if (preferred) utter.voice = preferred;
+
+        window.speechSynthesis.speak(utter);
+      };
+
+      // Setup SpeechRecognition once
+      useEffect(() => {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          setMicSupported(false);
+          return;
+        }
+        const recognition = new SpeechRec();
+        recognition.lang = "en-US";
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          setSpokenInput(transcript);
+        };
+
+        recognition.onerror = (event) => {
+          setIsRecording(false);
+          if (event.error === "not-allowed") {
+            triggerToast("Micro bị chặn quyền! Em hãy nhập câu trả lời vào ô gõ chữ bên dưới nhé.", "error");
+          } else if (event.error !== "aborted") {
+            triggerToast("Không nghe rõ giọng nói. Thử bấm Mic lại hoặc gõ chữ nhé!", "error");
+          }
+        };
+
+        recognition.onend = () => {
+          setIsRecording(false);
+        };
+
+        recognitionRef.current = recognition;
+      }, []);
+
+      const toggleRecording = () => {
+        if (!recognitionRef.current) {
+          triggerToast("Thiết bị không hỗ trợ ghi âm trực tiếp. Hãy dùng khung nhập chữ bên dưới!", "error");
+          return;
+        }
+        if (isRecording) {
+          recognitionRef.current.stop();
+          setIsRecording(false);
+        } else {
+          try {
+            setSpokenInput("");
+            setArenaResult(null);
+            recognitionRef.current.start();
+            setIsRecording(true);
+            playGameSFX("tap");
+          } catch (e) {
+            setIsRecording(false);
+            triggerToast("Micro đang bận, hãy thử lại sau 1 giây.", "error");
+          }
+        }
+      };
+
+      // =====================================================================
+      // 8. STEP 1, STEP 2, STEP 3 & BOSS HANDLERS
+      // =====================================================================
+      // Reset states whenever question or step changes
+      useEffect(() => {
+        setIsFlipped(false);
+        setSpokenInput("");
+        setArenaResult(null);
+        setShadowingCompleted(false);
+        if (isRecording && recognitionRef.current) {
+          try { recognitionRef.current.stop(); } catch {}
+          setIsRecording(false);
+        }
+
+        // Prepare Sentence Builder tokens
+        if (currentQuestion) {
+          const tokens = currentQuestion.model
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((word, idx) => ({ id: `${currentQuestion.id}_w_${idx}`, word, origIdx: idx }));
+
+          // Shuffle tokens deterministically yet varied
+          const shuffled = [...tokens];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          setBuilderPool(shuffled);
+          setBuilderChosen([]);
+          setBuilderStatus("playing");
+        }
+      }, [currentQuestion, stepTab]);
+
+      // Step 1: Mark Flashcard Memorized (+5 XP)
+      const handleMarkFlashcardDone = () => {
+        playGameSFX("success");
+        const already = qProgress[currentQuestion.id]?.flashcardDone;
+        setQProgress((prev) => ({
+          ...prev,
+          [currentQuestion.id]: {
+            ...(prev[currentQuestion.id] || {}),
+            flashcardDone: true
+          }
+        }));
+        if (!already) {
+          setXp((prev) => prev + 5);
+          triggerToast("✅ Đã thuộc thẻ! +5 XP", "success");
+        } else {
+          triggerToast("👍 Đã ôn lại thẻ!", "info");
+        }
+
+        if (qIndex < activeTopic.questions.length - 1) {
+          setQIndex((prev) => prev + 1);
+        } else {
+          triggerToast("🎉 Hết thẻ chủ đề này! Chuyển sang Bước 2: Ghép Câu nhé!", "success");
+          setQIndex(0);
+          setStepTab(2);
+        }
+      };
+
+      // Step 2: Sentence Builder Handlers
+      const handlePickWord = (token) => {
+        if (builderStatus === "correct") return;
+        playGameSFX("tap");
+        const nextChosen = [...builderChosen, token];
+        const nextPool = builderPool.filter((t) => t.id !== token.id);
+        setBuilderChosen(nextChosen);
+        setBuilderPool(nextPool);
+
+        // Check if all words placed
+        if (nextPool.length === 0) {
+          const builtSentence = nextChosen.map((t) => t.word).join(" ");
+          if (builtSentence === currentQuestion.model) {
+            setBuilderStatus("correct");
+            playGameSFX("success");
+            speakEnglish(currentQuestion.model, 0.92);
+
+            const already = qProgress[currentQuestion.id]?.builderDone;
+            setQProgress((prev) => ({
+              ...prev,
+              [currentQuestion.id]: {
+                ...(prev[currentQuestion.id] || {}),
+                builderDone: true
+              }
+            }));
+
+            const newStreak = streak + 1;
+            setStreak(newStreak);
+            if (newStreak > bestStreak) setBestStreak(newStreak);
+
+            if (!already) {
+              setXp((prev) => prev + 10);
+              triggerToast("🎯 Ghép câu chuẩn xác! +10 XP & +1 Streak 🔥", "success");
+            } else {
+              triggerToast("🎯 Ghép câu chính xác! +1 Streak 🔥", "success");
+            }
+          } else {
+            setBuilderStatus("wrong");
+            playGameSFX("error");
+            setStreak(0);
+            triggerToast("❌ Sai thứ tự ngữ pháp rồi! Chạm vào từ để xếp lại nhé.", "error");
+          }
+        }
+      };
+
+      const handleRemoveChosenWord = (token) => {
+        if (builderStatus === "correct") return;
+        playGameSFX("tap");
+        setBuilderStatus("playing");
+        setBuilderChosen((prev) => prev.filter((t) => t.id !== token.id));
+        setBuilderPool((prev) => [...prev, token]);
+      };
+
+      const handleBuilderHint = () => {
+        if (builderStatus === "correct") return;
+        const targetWords = currentQuestion.model.split(/\s+/).filter(Boolean);
+        // Find first index where chosen differs from target
+        let correctPrefixLen = 0;
+        while (
+          correctPrefixLen < builderChosen.length &&
+          builderChosen[correctPrefixLen].word === targetWords[correctPrefixLen]
+        ) {
+          correctPrefixLen++;
+        }
+
+        const validPrefix = builderChosen.slice(0, correctPrefixLen);
+        const returnedTokens = builderChosen.slice(correctPrefixLen);
+        const currentPool = [...builderPool, ...returnedTokens];
+
+        if (correctPrefixLen >= targetWords.length) return;
+        const neededWord = targetWords[correctPrefixLen];
+        const hintTokenIdx = currentPool.findIndex((t) => t.word === neededWord);
+
+        if (hintTokenIdx !== -1) {
+          const hintToken = currentPool[hintTokenIdx];
+          const remainingPool = currentPool.filter((_, idx) => idx !== hintTokenIdx);
+          const updatedChosen = [...validPrefix, hintToken];
+
+          playGameSFX("flip");
+          setBuilderChosen(updatedChosen);
+          setBuilderPool(remainingPool);
+          setBuilderStatus("playing");
+
+          if (remainingPool.length === 0) {
+            setBuilderStatus("correct");
+            playGameSFX("success");
+            speakEnglish(currentQuestion.model, 0.92);
+            setQProgress((prev) => ({
+              ...prev,
+              [currentQuestion.id]: {
+                ...(prev[currentQuestion.id] || {}),
+                builderDone: true
+              }
+            }));
+            setXp((prev) => prev + 5);
+            triggerToast("💡 Hoàn thành câu với gợi ý! +5 XP", "success");
+          }
+        }
+      };
+
+      // Step 3 & Boss: Grade Speaking Answer
+      const handleGradeArenaAnswer = () => {
+        if (isRecording && recognitionRef.current) {
+          try { recognitionRef.current.stop(); } catch {}
+          setIsRecording(false);
+        }
+
+        const res = evaluateSpeakingWordByWord(currentQuestion.model, spokenInput);
+        setArenaResult(res);
+
+        // Always play model answer after grading so student hears native pronunciation & intonation
+        setTimeout(() => {
+          speakEnglish(currentQuestion.model, 0.9);
+        }, 350);
+
+        if (res.passed) {
+          playGameSFX("success");
+          const prevStars = qProgress[currentQuestion.id]?.arenaStars || 0;
+          const bestStars = Math.max(prevStars, res.stars);
+
+          setQProgress((prev) => ({
+            ...prev,
+            [currentQuestion.id]: {
+              ...(prev[currentQuestion.id] || {}),
+              arenaStars: bestStars
+            }
+          }));
+
+          const earnedXp = res.stars * 5;
+          setXp((prev) => prev + earnedXp);
+          const nextStreak = streak + 1;
+          setStreak(nextStreak);
+          if (nextStreak > bestStreak) setBestStreak(nextStreak);
+
+          if (mainTab === "boss") {
+            setBossScoreShields((prev) => Math.min(15, prev + 1));
+          }
+          triggerToast(`⚔️ Đạt ${res.stars}/5 Sao! +${earnedXp} XP & Streak ${nextStreak}🔥`, "success");
+        } else {
+          playGameSFX("error");
+          setStreak(0);
+          triggerToast("⚠️ Chưa đạt 70%! Nghe mẫu và bấm 'Nói lại Shadowing' để sửa lỗi nhé.", "error");
+        }
+      };
+
+      // Shadowing retry bonus after hearing model answer
+      const handleShadowingRetry = () => {
+        if (!arenaResult) return;
+        const res = evaluateSpeakingWordByWord(currentQuestion.model, spokenInput);
+        setArenaResult(res);
+
+        if (res.passed && !shadowingCompleted) {
+          playGameSFX("catch");
+          setShadowingCompleted(true);
+          const prevStars = qProgress[currentQuestion.id]?.arenaStars || 0;
+          setQProgress((prev) => ({
+            ...prev,
+            [currentQuestion.id]: {
+              ...(prev[currentQuestion.id] || {}),
+              arenaStars: Math.max(prevStars, res.stars)
+            }
+          }));
+          setXp((prev) => prev + 15);
+          const nextStreak = streak + 1;
+          setStreak(nextStreak);
+          if (nextStreak > bestStreak) setBestStreak(nextStreak);
+          if (mainTab === "boss") {
+            setBossScoreShields((prev) => Math.min(15, prev + 1));
+          }
+          triggerToast("🌟 Shadowing sửa lỗi thành công! +15 XP & Phục hồi Streak!", "success");
+        } else {
+          speakEnglish(currentQuestion.model, 0.85);
+          triggerToast("🔊 Nghe kỹ các từ màu đỏ và thử lại nhé!", "info");
+        }
+      };
+
+      // Start 15-Shield Boss Gauntlet (15 random questions from all 193 questions)
+      const startBossChallenge = () => {
+        playGameSFX("catch");
+        const allQ = FLYERS_TOPICS.flatMap((t) =>
+          t.questions.map((q) => ({ ...q, topicShort: t.shortTitle }))
+        );
+        const shuffled = [...allQ];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        const picked15 = shuffled.slice(0, 15);
+        setBossQuestions(picked15);
+        setBossIdx(0);
+        setBossScoreShields(0);
+        setBossFinished(false);
+        setMainTab("boss");
+        setTimeout(() => {
+          speakEnglish(picked15[0].q, 0.92);
+        }, 400);
+      };
+
+      // =====================================================================
+      // 9. GOOGLE SHEETS SYNC & ZALO REPORT CLIPBOARD
+      // =====================================================================
+      const syncToGoogleSheets = async (activityLabel = "Cập nhật tiến độ") => {
+        if (!sheetUrl || !sheetUrl.trim().startsWith("http")) return;
+        setSyncStatus("syncing");
+        const caughtNames = stats.topicStatuses
+          .filter((s) => s.caught)
+          .map((s) => (s.isMega ? s.topic.monster.megaName : s.topic.monster.name));
+        if (stats.bossCaught) {
+          caughtNames.push(stats.bossMega ? BOSS_MONSTER_015.megaName : BOSS_MONSTER_015.name);
+        }
+
+        const payload = {
+          studentName: studentName || "Học sinh",
+          studentClass: studentClass || "Flyers",
+          activity: activityLabel,
+          xp,
+          shields: stats.shields,
+          memorizedCount: stats.memorizedCount,
+          streak: bestStreak,
+          caughtMonsters: caughtNames.join(", ") || "Chưa có"
+        };
+
+        try {
+          await fetch(sheetUrl.trim(), {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          setSyncStatus("synced");
+          setTimeout(() => setSyncStatus("idle"), 3000);
+        } catch {
+          setSyncStatus("idle");
+        }
+      };
+
+      const copyTextSafe = (text) => {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+        } catch {
+          if (navigator.clipboard) navigator.clipboard.writeText(text);
+        }
+        document.body.removeChild(textarea);
+      };
+
+      const handleCopyZaloReport = () => {
+        playGameSFX("success");
+        const caughtList = stats.topicStatuses
+          .filter((s) => s.caught)
+          .map((s) => `${s.topic.monster.dex} ${s.isMega ? s.topic.monster.megaName : s.topic.monster.name}`);
+        if (stats.bossCaught) {
+          caughtList.push(`#015 ${stats.bossMega ? BOSS_MONSTER_015.megaName : BOSS_MONSTER_015.name}`);
+        }
+
+        const report = [
+          `🏆 BÁO CÁO FLYERS-MON: SPEAKING QUEST`,
+          `👤 Học sinh: ${studentName || "Chưa đặt tên"} | Lớp: ${studentClass || "A2 Flyers"}`,
+          `🎖️ Cấp độ: Level ${stats.level} (${xp} XP)`,
+          `🛡️ Mục tiêu Cambridge: ${stats.shields}/15 Khiên`,
+          `🔥 Chuỗi trả lời đúng cao nhất: ${bestStreak} câu liên tiếp`,
+          `📚 Đã thuộc: ${stats.memorizedCount}/${TOTAL_QUESTIONS_COUNT} câu hỏi Part 4`,
+          `🐉 Linh thú đã thu phục (${caughtList.length}/15): ${caughtList.length > 0 ? caughtList.join(", ") : "Đang huấn luyện"}`
+        ].join("\n");
+
+        copyTextSafe(report);
+        syncToGoogleSheets("Xuất báo cáo Zalo");
+        triggerToast("📋 Đã copy báo cáo Zalo & đồng bộ dữ liệu!", "success");
+      };
+
+      const intonationTokens = useMemo(
+        () => (currentQuestion ? buildIntonationTokens(currentQuestion.model) : []),
+        [currentQuestion]
+      );
+
+      const currentTopicStatus = stats.topicStatuses.find((s) => s.topic.id === activeTopic.id);
+
+      // =====================================================================
+      // 10. RENDER UI
+      // =========================================================================
+      return (
+        <div className="max-w-lg mx-auto min-h-screen flex flex-col justify-between pb-24 relative">
+          {/* NON-BLOCKING TOAST BANNER */}
+          {toast && (
+            <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md animate-pop">
+              <div
+                className={`px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2.5 ${
+                  toast.type === "success"
+                    ? "bg-emerald-950/95 border-emerald-400 text-emerald-200"
+                    : toast.type === "error"
+                    ? "bg-rose-950/95 border-rose-400 text-rose-200"
+                    : "bg-slate-900/95 border-sky-400 text-sky-200"
+                }`}
+              >
+                <span className="text-base">
+                  {toast.type === "success" ? "✨" : toast.type === "error" ? "⚠️" : "💡"}
+                </span>
+                <span className="leading-snug">{toast.msg}</span>
+              </div>
+            </div>
+          )}
+
+          {/* TOP HUD BAR (TRAINER STATS & 15-SHIELD TRACKER) */}
+          <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-indigo-500/30 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              {/* Trainer Profile Button */}
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 px-2.5 py-1.5 rounded-2xl transition text-left"
+              >
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-slate-950 font-game font-black text-sm shadow">
+                  L{stats.level}
+                </div>
+                <div>
+                  <div className="text-xs font-extrabold text-white truncate max-w-[95px]">
+                    {studentName || "Trainer"}
+                  </div>
+                  <div className="text-[10px] font-semibold text-indigo-300 truncate max-w-[95px]">
+                    {studentClass || "A2 Flyers"} • ⚙️
+                  </div>
+                </div>
+              </button>
+
+              {/* Game Counters: Streak, XP, 15 Shields */}
+              <div className="flex items-center gap-1.5 font-game text-xs font-extrabold">
+                <div className="bg-orange-950/70 border border-orange-500/40 text-orange-300 px-2 py-1.5 rounded-xl flex items-center gap-1">
+                  <span>🔥</span>
+                  <span>{streak}</span>
+                </div>
+                <div className="bg-amber-950/70 border border-amber-500/40 text-amber-300 px-2 py-1.5 rounded-xl flex items-center gap-1">
+                  <span>⭐</span>
+                  <span>{xp}</span>
+                </div>
+                <div className="bg-sky-950/80 border border-sky-400/50 text-sky-300 px-2.5 py-1.5 rounded-xl flex items-center gap-1 shadow-sm shadow-sky-500/20">
+                  <span>🛡️</span>
+                  <span>{stats.shields}/15</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 15-Shield Progress Bar */}
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60">
+                <div
+                  className="h-full bg-gradient-to-r from-sky-400 via-indigo-400 to-amber-400 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (stats.shields / 15) * 100)}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">
+                Thuộc {stats.memorizedCount}/{TOTAL_QUESTIONS_COUNT} câu
+              </span>
+            </div>
+          </header>
+
+          {/* MAIN CONTENT BODY */}
+          <main className="flex-1 px-3.5 pt-3 space-y-4">
+            {/* ===============================================================
+                TAB 1: 14 TOPICS & 3-STEP TRAINING ARENA
+               =============================================================== */}
+            {mainTab === "topics" && (
+              <>
+                {/* Horizontal Topic Selector Pills */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-300">
+                      Chọn Chủ Đề Luyện Tập (14 Chủ Đề)
+                    </span>
+                    <button
+                      onClick={handleCopyZaloReport}
+                      className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                    >
+                      <i className="fa-solid fa-share-nodes"></i> Gửi Zalo
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar">
+                    {stats.topicStatuses.map((st) => {
+                      const active = st.topic.id === activeTopic.id;
+                      return (
+                        <button
+                          key={st.topic.id}
+                          onClick={() => {
+                            playGameSFX("tap");
+                            setSelectedTopicId(st.topic.id);
+                            setQIndex(0);
+                          }}
+                          className={`shrink-0 px-3 py-2 rounded-2xl border text-left transition flex items-center gap-2 ${
+                            active
+                              ? "bg-indigo-600 border-indigo-300 text-white shadow-lg shadow-indigo-600/30"
+                              : "bg-slate-900/90 border-slate-800 text-slate-300 hover:border-slate-600"
+                          }`}
+                        >
+                          <span className="text-base">{st.topic.icon}</span>
+                          <div>
+                            <div className="text-[11px] font-extrabold leading-tight">
+                              {st.topic.number}. {st.topic.shortTitle}
+                            </div>
+                            <div className="text-[10px] opacity-80 flex items-center gap-1">
+                              <span>{st.doneCount}/{st.total}</span>
+                              {st.caught && <span className="text-amber-300">• {st.isMega ? "🌟MEGA" : "🔴Đã bắt"}</span>}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Active Topic Monster Banner */}
+                <div className={`bg-gradient-to-r ${activeTopic.color} rounded-3xl p-3.5 shadow-xl border border-white/20 flex items-center justify-between`}>
+                  <div className="space-y-1 flex-1 pr-2">
+                    <div className="inline-flex items-center gap-1.5 bg-black/25 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold text-white">
+                      <span>{activeTopic.monster.dex}</span>
+                      <span>•</span>
+                      <span>{currentTopicStatus?.isMega ? activeTopic.monster.megaName : activeTopic.monster.name}</span>
+                    </div>
+                    <h1 className="font-game font-black text-lg text-white leading-tight">
+                      {activeTopic.title}
+                    </h1>
+                    <p className="text-[11px] text-white/90">
+                      {currentTopicStatus?.caught
+                        ? currentTopicStatus?.isMega
+                          ? "✨ Đã tiến hóa dạng MEGA tối thượng!"
+                          : "🎉 Đã thu phục! Đạt ≥80% hoặc Streak 5🔥 để tiến hóa Mega!"
+                        : `Thuộc ${Math.min(4, activeTopic.questions.length)} câu để thu phục ${activeTopic.monster.name}!`}
+                    </p>
+                  </div>
+                  <div className="shrink-0 bg-slate-950/30 rounded-2xl p-1 border border-white/15">
+                    <MonsterSprite
+                      monster={activeTopic.monster}
+                      isMega={currentTopicStatus?.isMega}
+                      locked={!currentTopicStatus?.caught}
+                      size={74}
+                    />
+                  </div>
+                </div>
+
+                {/* 3-STEP WORKFLOW TABS */}
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+                  <button
+                    onClick={() => { playGameSFX("tap"); setStepTab(1); }}
+                    className={`py-2.5 px-2 rounded-xl text-xs font-extrabold transition flex flex-col items-center gap-0.5 ${
+                      stepTab === 1
+                        ? "bg-sky-500 text-slate-950 shadow-md"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>1️⃣ Thẻ 3D</span>
+                    <span className="text-[9px] font-semibold opacity-85">Học & Ngữ điệu</span>
+                  </button>
+
+                  <button
+                    onClick={() => { playGameSFX("tap"); setStepTab(2); }}
+                    className={`py-2.5 px-2 rounded-xl text-xs font-extrabold transition flex flex-col items-center gap-0.5 ${
+                      stepTab === 2
+                        ? "bg-amber-400 text-slate-950 shadow-md"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>2️⃣ Ghép Câu</span>
+                    <span className="text-[9px] font-semibold opacity-85">Phản xạ từ</span>
+                  </button>
+
+                  <button
+                    onClick={() => { playGameSFX("tap"); setStepTab(3); }}
+                    className={`py-2.5 px-2 rounded-xl text-xs font-extrabold transition flex flex-col items-center gap-0.5 ${
+                      stepTab === 3
+                        ? "bg-rose-500 text-white shadow-md"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>3️⃣ Đấu Trường</span>
+                    <span className="text-[9px] font-semibold opacity-85">Nói & Chấm lỗi</span>
+                  </button>
+                </div>
+
+                {/* Question Navigator Bar */}
+                <div className="flex items-center justify-between bg-slate-900/80 px-3 py-2 rounded-2xl border border-slate-800">
+                  <button
+                    onClick={() => {
+                      playGameSFX("tap");
+                      setQIndex((prev) => (prev > 0 ? prev - 1 : activeTopic.questions.length - 1));
+                    }}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-200"
+                    aria-label="Câu trước"
+                  >
+                    <i className="fa-solid fa-chevron-left"></i>
+                  </button>
+
+                  <div className="text-center">
+                    <div className="text-xs font-extrabold text-white font-game">
+                      Câu hỏi {qIndex + 1} / {activeTopic.questions.length}
+                    </div>
+                    <div className="flex items-center justify-center gap-1 mt-0.5">
+                      {activeTopic.questions.map((item, idx) => {
+                        const p = qProgress[item.id];
+                        const isDone = p && (p.flashcardDone || p.builderDone || (p.arenaStars && p.arenaStars >= 4));
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setQIndex(idx)}
+                            className={`h-1.5 rounded-full transition-all ${
+                              idx === qIndex
+                                ? "w-5 bg-sky-400"
+                                : isDone
+                                ? "w-2 bg-emerald-400"
+                                : "w-1.5 bg-slate-700"
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      playGameSFX("tap");
+                      setQIndex((prev) => (prev < activeTopic.questions.length - 1 ? prev + 1 : 0));
+                    }}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-200"
+                    aria-label="Câu tiếp theo"
+                  >
+                    <i className="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+
+                {/* ===========================================================
+                    STEP 1: 3D FLIP FLASHCARD
+                   =========================================================== */}
+                {stepTab === 1 && (
+                  <div className="space-y-3">
+                    <div className="perspective-1000 w-full min-h-[300px]">
+                      <div
+                        onClick={() => {
+                          playGameSFX("flip");
+                          setIsFlipped((prev) => !prev);
+                        }}
+                        className={`relative w-full min-h-[300px] transform-style-3d cursor-pointer ${
+                          isFlipped ? "rotate-y-180" : ""
+                        }`}
+                      >
+                        {/* FRONT OF CARD: QUESTION + VIETNAMESE + AUDIO */}
+                        <div className="backface-hidden absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-sky-500/40 rounded-3xl p-5 flex flex-col justify-between shadow-2xl">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-extrabold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-400/30 px-3 py-1 rounded-full">
+                              Mặt Trước • Câu Hỏi
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                speakEnglish(currentQuestion.q, 0.92);
+                              }}
+                              className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg"
+                            >
+                              <i className="fa-solid fa-volume-high"></i> Nghe câu hỏi
+                            </button>
+                          </div>
+
+                          <div className="my-auto text-center py-4 space-y-3">
+                            <h2 className="font-game font-black text-2xl text-white leading-snug">
+                              "{currentQuestion.q}"
+                            </h2>
+                            <p className="text-sm font-semibold text-sky-300 bg-slate-950/60 inline-block px-4 py-1.5 rounded-2xl border border-slate-700/70">
+                              🇻🇳 {currentQuestion.vi}
+                            </p>
+                          </div>
+
+                          <div className="text-center text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5">
+                            <i className="fa-solid fa-rotate text-sky-400"></i>
+                            <span>Chạm vào thẻ để lật xem đáp án & ngữ điệu ↻</span>
+                          </div>
+                        </div>
+
+                        {/* BACK OF CARD: MODEL ANSWER + INTONATION DIAGRAM + SPEED BUTTONS */}
+                        <div className="backface-hidden rotate-y-180 absolute inset-0 bg-gradient-to-br from-indigo-950 to-slate-900 border-2 border-amber-400/50 rounded-3xl p-5 flex flex-col justify-between shadow-2xl">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-extrabold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-3 py-1 rounded-full">
+                              Mặt Sau • Đáp Án & Ngữ Điệu
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-400">Chạm để lật lại ↺</span>
+                          </div>
+
+                          {/* Intonation & Stress Visual Map */}
+                          <div className="my-auto py-3 space-y-3">
+                            <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-indigo-400/30">
+                              <div className="text-[10px] font-bold text-indigo-300 uppercase mb-2">
+                                🎵 Sơ đồ nhấn trọng âm (Vàng) & Ngữ điệu (↗ lên / ↘ xuống):
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 items-center leading-relaxed">
+                                {intonationTokens.map((tok, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`px-2 py-0.5 rounded-lg text-base font-game ${
+                                      tok.isStressed
+                                        ? "bg-amber-400/20 text-amber-300 font-black border-b-2 border-amber-400"
+                                        : "text-slate-200 font-semibold"
+                                    }`}
+                                  >
+                                    {tok.text}
+                                    {tok.arrow && (
+                                      <span className="ml-1 text-rose-400 font-black">{tok.arrow}</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Normal (0.92x) and Slow (0.70x) Audio Buttons */}
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="grid grid-cols-2 gap-2"
+                            >
+                              <button
+                                onClick={() => speakEnglish(currentQuestion.model, 0.92)}
+                                className="py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow"
+                              >
+                                <i className="fa-solid fa-volume-high"></i> Nghe chuẩn (0.92x)
+                              </button>
+                              <button
+                                onClick={() => speakEnglish(currentQuestion.model, 0.7)}
+                                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/40 font-extrabold text-xs flex items-center justify-center gap-1.5"
+                              >
+                                <span>🐢</span> Nghe chậm (0.70x)
+                              </button>
+                            </div>
+                          </div>
+
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="pt-1"
+                          >
+                            <button
+                              onClick={handleMarkFlashcardDone}
+                              className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-game font-black text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition"
+                            >
+                              <i className="fa-solid fa-circle-check"></i>
+                              <span>Đã thuộc (+5 XP)</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ===========================================================
+                    STEP 2: SENTENCE BUILDER (GHÉP CÂU PHẢN XẠ)
+                   =========================================================== */}
+                {stepTab === 2 && (
+                  <div className="bg-slate-900/95 border border-amber-400/30 rounded-3xl p-4 space-y-4 shadow-xl">
+                    {/* Question Prompt */}
+                    <div className="flex items-start justify-between gap-2 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-amber-400 uppercase">
+                          Sắp xếp các từ thành câu trả lời chuẩn:
+                        </span>
+                        <h3 className="font-game font-extrabold text-base text-white mt-0.5">
+                          {currentQuestion.q}
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-0.5">🇻🇳 {currentQuestion.vi}</p>
+                      </div>
+                      <button
+                        onClick={() => speakEnglish(currentQuestion.q, 0.92)}
+                        className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 shrink-0"
+                      >
+                        <i className="fa-solid fa-volume-high"></i>
+                      </button>
+                    </div>
+
+                    {/* Drop Zone / Constructed Sentence */}
+                    <div
+                      className={`min-h-[86px] p-3 rounded-2xl border-2 border-dashed flex flex-wrap gap-2 items-center transition ${
+                        builderStatus === "correct"
+                          ? "bg-emerald-950/40 border-emerald-400"
+                          : builderStatus === "wrong"
+                          ? "bg-rose-950/40 border-rose-400"
+                          : "bg-slate-950/60 border-slate-700"
+                      }`}
+                    >
+                      {builderChosen.length === 0 ? (
+                        <span className="text-xs text-slate-500 mx-auto">
+                          Chạm vào các thẻ từ bên dưới để ghép câu...
+                        </span>
+                      ) : (
+                        builderChosen.map((tok) => (
+                          <button
+                            key={tok.id}
+                            onClick={() => handleRemoveChosenWord(tok)}
+                            className={`px-3 py-2 rounded-xl font-bold text-sm shadow transition ${
+                              builderStatus === "correct"
+                                ? "bg-emerald-500 text-slate-950"
+                                : "bg-amber-400 text-slate-950 hover:bg-amber-300"
+                            }`}
+                          >
+                            {tok.word}
+                          </button>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Shuffled Word Pool */}
+                    <div className="flex flex-wrap gap-2 justify-center py-1">
+                      {builderPool.map((tok) => (
+                        <button
+                          key={tok.id}
+                          onClick={() => handlePickWord(tok)}
+                          className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-white font-bold text-sm shadow transition"
+                        >
+                          {tok.word}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Builder Controls: Hint 1 Word / Reset / Next */}
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={handleBuilderHint}
+                        disabled={builderStatus === "correct"}
+                        className="flex-1 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow"
+                      >
+                        <span>💡 Gợi ý 1 từ</span>
+                      </button>
+
+                      {builderStatus === "correct" ? (
+                        <button
+                          onClick={() => {
+                            if (qIndex < activeTopic.questions.length - 1) {
+                              setQIndex((prev) => prev + 1);
+                            } else {
+                              setQIndex(0);
+                              setStepTab(3);
+                              triggerToast("⚔️ Sẵn sàng vào Đấu Trường Nói!", "success");
+                            }
+                          }}
+                          className="flex-1 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-lg"
+                        >
+                          <span>Câu tiếp theo ➔</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setBuilderPool((prev) => [...prev, ...builderChosen]);
+                            setBuilderChosen([]);
+                            setBuilderStatus("playing");
+                          }}
+                          className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                        >
+                          Xếp lại
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ===========================================================
+                    STEP 3: SPEAKING ARENA (BLIND TEST + WORD-BY-WORD GRADING)
+                   =========================================================== */}
+                {stepTab === 3 && (
+                  <SpeakingArenaPanel
+                    question={currentQuestion}
+                    monster={activeTopic.monster}
+                    isMega={currentTopicStatus?.isMega}
+                    isRecording={isRecording}
+                    micSupported={micSupported}
+                    spokenInput={spokenInput}
+                    setSpokenInput={setSpokenInput}
+                    toggleRecording={toggleRecording}
+                    onGrade={handleGradeArenaAnswer}
+                    onShadowRetry={handleShadowingRetry}
+                    arenaResult={arenaResult}
+                    shadowingCompleted={shadowingCompleted}
+                    speakEnglish={speakEnglish}
+                    onNext={() => {
+                      if (qIndex < activeTopic.questions.length - 1) {
+                        setQIndex((prev) => prev + 1);
+                      } else {
+                        triggerToast("🏆 Hoàn thành toàn bộ câu hỏi chủ đề!", "success");
+                        setQIndex(0);
+                      }
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* ===============================================================
+                TAB 2: FLYERS-DEX (15 COLLECTIBLE & MEGA MONSTERS)
+               =============================================================== */}
+            {mainTab === "dex" && (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-indigo-900 to-purple-900 border border-indigo-400/30 rounded-3xl p-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-game font-black text-lg text-white">
+                      📖 Bộ Sưu Tập Flyers-Dex
+                    </h2>
+                    <p className="text-xs text-indigo-200 mt-0.5">
+                      Đã thu phục <strong className="text-amber-300">{stats.caughtCount}/15</strong> Linh Thú • Đạt ≥80% chủ đề hoặc Streak 5🔥 để tiến hóa <strong className="text-rose-300">MEGA</strong>!
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCopyZaloReport}
+                    className="px-3 py-2 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs shadow shrink-0"
+                  >
+                    📋 Báo Cáo
+                  </button>
+                </div>
+
+                {/* Legendary #015 Aether-Phoenix Card */}
+                <div
+                  className={`rounded-3xl p-4 border-2 transition ${
+                    stats.bossCaught
+                      ? "bg-gradient-to-r from-amber-950/90 via-rose-950/90 to-indigo-950/90 border-amber-400 shadow-xl shadow-amber-500/20"
+                      : "bg-slate-900/80 border-slate-800"
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <MonsterSprite
+                      monster={BOSS_MONSTER_015}
+                      isMega={stats.bossMega}
+                      locked={!stats.bossCaught}
+                      size={88}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black bg-amber-400 text-slate-950 px-2 py-0.5 rounded-lg">
+                          #015 BOSS HUYỀN THOẠI
+                        </span>
+                        {stats.bossMega && (
+                          <span className="text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-lg">
+                            MEGA
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-game font-black text-base text-white mt-1">
+                        {stats.bossMega ? BOSS_MONSTER_015.megaName : BOSS_MONSTER_015.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-300 mt-0.5">{BOSS_MONSTER_015.desc}</p>
+                      <div className="mt-2">
+                        <button
+                          onClick={startBossChallenge}
+                          className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow"
+                        >
+                          ⚔️ Khiêu Chiến Boss 15 Khiên
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid of 14 Topic Flyers-Mon (#001 - #014) */}
+                <div className="grid grid-cols-2 gap-3">
+                  {stats.topicStatuses.map((st) => (
+                    <div
+                      key={st.topic.id}
+                      onClick={() => {
+                        setSelectedTopicId(st.topic.id);
+                        setQIndex(0);
+                        setMainTab("topics");
+                      }}
+                      className={`rounded-3xl p-3 border text-center cursor-pointer transition hover:scale-[1.02] ${
+                        st.caught
+                          ? st.isMega
+                            ? "bg-gradient-to-b from-slate-800 to-indigo-950 border-amber-400/70 shadow-lg"
+                            : "bg-slate-800/90 border-sky-400/40"
+                          : "bg-slate-900/70 border-slate-800"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[10px] font-extrabold mb-1">
+                        <span className="text-slate-400">{st.topic.monster.dex}</span>
+                        {st.isMega ? (
+                          <span className="bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 px-1.5 py-0.5 rounded font-black">
+                            MEGA
+                          </span>
+                        ) : st.caught ? (
+                          <span className="text-emerald-400">Đã bắt</span>
+                        ) : (
+                          <span className="text-slate-500">Chưa mở</span>
+                        )}
+                      </div>
+
+                      <MonsterSprite
+                        monster={st.topic.monster}
+                        isMega={st.isMega}
+                        locked={!st.caught}
+                        size={76}
+                      />
+
+                      <div className="font-game font-extrabold text-xs text-white mt-1 truncate">
+                        {st.caught
+                          ? st.isMega
+                            ? st.topic.monster.megaName
+                            : st.topic.monster.name
+                          : "???"}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate">
+                        {st.topic.number}. {st.topic.shortTitle}
+                      </div>
+
+                      {/* Topic Progress Bar */}
+                      <div className="mt-2 w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${st.isMega ? "bg-amber-400" : "bg-sky-400"}`}
+                          style={{ width: `${st.pct}%` }}
+                        />
+                      </div>
+                      <div className="text-[9px] text-slate-400 mt-1">
+                        Thuộc {st.doneCount}/{st.total} ({st.pct}%)
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ===============================================================
+                TAB 3: BOSS 15-SHIELD GAUNTLET (ĐẤU TRƯỜNG TỔNG HỢP 15 KHIÊN)
+               =============================================================== */}
+            {mainTab === "boss" && (
+              <div className="space-y-4">
+                {bossQuestions.length === 0 ? (
+                  <div className="bg-gradient-to-b from-slate-900 to-indigo-950 border-2 border-amber-400/50 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+                    <MonsterSprite monster={BOSS_MONSTER_015} isMega={true} size={110} />
+                    <div>
+                      <span className="text-xs font-black bg-amber-400 text-slate-950 px-3 py-1 rounded-full">
+                        CAMBRIDGE A2 FLYERS FINAL BOSS
+                      </span>
+                      <h2 className="font-game font-black text-2xl text-white mt-2">
+                        Thử Thách Boss 15 Khiên 🛡️
+                      </h2>
+                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                        Hệ thống sẽ bốc ngẫu nhiên <strong>15 câu hỏi</strong> từ kho 193 câu của 14 chủ đề. Trả lời chuẩn xác để giành trọn <strong>15 Khiên</strong> và thu phục <strong>#015 Aether-Phoenix</strong>!
+                      </p>
+                    </div>
+                    <button
+                      onClick={startBossChallenge}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-game font-black text-base shadow-xl shadow-amber-500/30 hover:brightness-110 transition"
+                    >
+                      ⚔️ BẮT ĐẦU THI ĐẤU 15 KHIÊN
+                    </button>
+                  </div>
+                ) : bossFinished ? (
+                  <div className="bg-gradient-to-b from-slate-900 to-indigo-950 border-2 border-emerald-400/60 rounded-3xl p-6 text-center space-y-4 shadow-2xl animate-pop">
+                    <MonsterSprite
+                      monster={BOSS_MONSTER_015}
+                      isMega={bossScoreShields >= 13}
+                      locked={bossScoreShields < 10}
+                      size={110}
+                    />
+                    <h2 className="font-game font-black text-2xl text-white">
+                      Kết Quả Đấu Trường Boss!
+                    </h2>
+                    <div className="text-4xl font-game font-black text-amber-400">
+                      🛡️ {bossScoreShields} / 15 Khiên
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      {bossScoreShields >= 15
+                        ? "🏆 TUYỆT ĐỐI 15 KHIÊN! Em đã thu phục Phượng Hoàng Huyền Thoại #015!"
+                        : bossScoreShields >= 10
+                        ? "🎉 Xuất sắc! Em đã vượt qua ngưỡng 10 Khiên Flyers!"
+                        : "💪 Hãy ôn lại Flashcard 3D và thử thách lại để đạt 15 Khiên nhé!"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <button
+                        onClick={handleCopyZaloReport}
+                        className="py-3 rounded-2xl bg-emerald-500 text-slate-950 font-extrabold text-xs shadow"
+                      >
+                        📋 Gửi Báo Cáo Zalo
+                      </button>
+                      <button
+                        onClick={startBossChallenge}
+                        className="py-3 rounded-2xl bg-amber-400 text-slate-950 font-extrabold text-xs shadow"
+                      >
+                        🔄 Đấu Lại Boss
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between bg-amber-950/60 border border-amber-400/40 px-3.5 py-2 rounded-2xl">
+                      <span className="text-xs font-extrabold text-amber-300">
+                        ⚔️ Boss Câu {bossIdx + 1}/15 ({currentQuestion.topicShort})
+                      </span>
+                      <span className="text-xs font-black text-white">
+                        🛡️ {bossScoreShields} Khiên
+                      </span>
+                    </div>
+
+                    <SpeakingArenaPanel
+                      question={currentQuestion}
+                      monster={BOSS_MONSTER_015}
+                      isMega={true}
+                      isRecording={isRecording}
+                      micSupported={micSupported}
+                      spokenInput={spokenInput}
+                      setSpokenInput={setSpokenInput}
+                      toggleRecording={toggleRecording}
+                      onGrade={handleGradeArenaAnswer}
+                      onShadowRetry={handleShadowingRetry}
+                      arenaResult={arenaResult}
+                      shadowingCompleted={shadowingCompleted}
+                      speakEnglish={speakEnglish}
+                      onNext={() => {
+                        if (bossIdx < bossQuestions.length - 1) {
+                          const nextI = bossIdx + 1;
+                          setBossIdx(nextI);
+                          setTimeout(() => speakEnglish(bossQuestions[nextI].q, 0.92), 300);
+                        } else {
+                          setBossFinished(true);
+                          playGameSFX("catch");
+                          syncToGoogleSheets(`Hoàn thành Boss 15 Khiên: ${bossScoreShields}/15`);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* BOTTOM NAVIGATION BAR */}
+          <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-30 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 px-4 py-2 flex items-center justify-around">
+            <button
+              onClick={() => { playGameSFX("tap"); setMainTab("topics"); }}
+              className={`flex flex-col items-center gap-0.5 py-1 px-4 rounded-xl transition ${
+                mainTab === "topics" ? "text-sky-400 font-extrabold" : "text-slate-400 font-semibold"
+              }`}
+            >
+              <i className="fa-solid fa-layer-group text-base"></i>
+              <span className="text-[11px]">14 Chủ Đề</span>
+            </button>
+
+            <button
+              onClick={() => { playGameSFX("tap"); setMainTab("boss"); }}
+              className={`flex flex-col items-center gap-0.5 py-1 px-4 rounded-xl transition ${
+                mainTab === "boss" ? "text-amber-400 font-extrabold" : "text-slate-400 font-semibold"
+              }`}
+            >
+              <i className="fa-solid fa-shield-halved text-base"></i>
+              <span className="text-[11px]">Boss 15 Khiên</span>
+            </button>
+
+            <button
+              onClick={() => { playGameSFX("tap"); setMainTab("dex"); }}
+              className={`flex flex-col items-center gap-0.5 py-1 px-4 rounded-xl transition relative ${
+                mainTab === "dex" ? "text-rose-400 font-extrabold" : "text-slate-400 font-semibold"
+              }`}
+            >
+              <i className="fa-solid fa-dragon text-base"></i>
+              <span className="text-[11px]">Flyers-Dex ({stats.caughtCount}/15)</span>
+            </button>
+          </nav>
+
+          {/* =================================================================
+              MODAL 1: POKÉMON-STYLE MONSTER CATCH & MEGA EVOLUTION POPUP
+             ================================================================= */}
+          {catchPopup && (
+            <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-gradient-to-b from-indigo-900 via-slate-900 to-slate-950 border-2 border-amber-400 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pop">
+                <div className="inline-block bg-amber-400 text-slate-950 font-game font-black text-xs px-3.5 py-1 rounded-full uppercase">
+                  {catchPopup.isEvolution ? "🌟 TIẾN HÓA MEGA THÀNH CÔNG!" : "🎉 THU PHỤC LINH THÚ MỚI!"}
+                </div>
+
+                <div className="py-2">
+                  <MonsterSprite monster={catchPopup.monster} isMega={catchPopup.isMega} size={120} />
+                </div>
+
+                <div>
+                  <div className="text-xs font-bold text-indigo-300">
+                    {catchPopup.monster.dex} • {catchPopup.monster.element}
+                  </div>
+                  <h3 className="font-game font-black text-2xl text-white mt-0.5">
+                    {catchPopup.isMega ? catchPopup.monster.megaName : catchPopup.monster.name}
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">{catchPopup.monster.desc}</p>
+                </div>
+
+                <button
+                  onClick={() => setCatchPopup(null)}
+                  className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-game font-black text-sm shadow-lg"
+                >
+                  Đưa Vào Flyers-Dex ➔
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* =================================================================
+              MODAL 2: STUDENT LOGIN & GOOGLE SHEETS TEACHER TRACKING
+             ================================================================= */}
+          {showProfileModal && (
+            <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+              <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-md w-full space-y-4 shadow-2xl animate-pop my-auto">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🎓</span>
+                    <div>
+                      <h3 className="font-game font-black text-base text-white">
+                        Hồ Sơ Học Sinh & Theo Dõi
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Nhập tên để lưu điểm, mở khóa linh thú & gửi giáo viên
+                      </p>
+                    </div>
+                  </div>
+                  {studentName && (
+                    <button
+                      onClick={() => setShowProfileModal(false)}
+                      className="text-slate-400 hover:text-white p-1"
+                    >
+                      <i className="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Tên học sinh:
+                    </label>
+                    <input
+                      type="text"
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      placeholder="Ví dụ: Nguyễn Minh Khôi"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-sky-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Lớp / Nhóm học:
+                    </label>
+                    <input
+                      type="text"
+                      value={studentClass}
+                      onChange={(e) => setStudentClass(e.target.value)}
+                      placeholder="Ví dụ: Flyers 5A1"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-sky-400"
+                    />
+                  </div>
+
+                  <div className="pt-1 border-t border-slate-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-indigo-300">
+                        Link Google Sheets Apps Script (Dành cho Giáo viên):
+                      </label>
+                      <button
+                        onClick={() => setShowScriptHelp((prev) => !prev)}
+                        className="text-[11px] font-bold text-sky-400 underline"
+                      >
+                        {showScriptHelp ? "Ẩn mã Script" : "Lấy mã Apps Script"}
+                      </button>
+                    </div>
+                    <input
+                      type="url"
+                      value={sheetUrl}
+                      onChange={(e) => setSheetUrl(e.target.value)}
+                      placeholder="https://script.google.com/macros/s/.../exec"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-sky-300 focus:outline-none focus:border-indigo-400"
+                    />
+                  </div>
+
+                  {showScriptHelp && (
+                    <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        1. Mở Google Sheets ➔ <strong>Tiện ích mở rộng</strong> ➔ <strong>Apps Script</strong>.<br />
+                        2. Dán đoạn mã dưới đây ➔ <strong>Triển khai (Deploy)</strong> ➔ <strong>Ứng dụng web (Web app)</strong> ➔ Quyền truy cập: <strong>Bất kỳ ai (Anyone)</strong>.
+                      </p>
+                      <textarea
+                        readOnly
+                        value={APPS_SCRIPT_TEMPLATE}
+                        rows={5}
+                        className="w-full p-2 rounded-xl bg-slate-900 text-[10px] font-mono text-emerald-300 border border-slate-800"
+                      />
+                      <button
+                        onClick={() => {
+                          copyTextSafe(APPS_SCRIPT_TEMPLATE);
+                          triggerToast("📋 Đã copy mã Google Apps Script!", "success");
+                        }}
+                        className="w-full py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs"
+                      >
+                        Copy Mã Apps Script
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={handleCopyZaloReport}
+                    className="py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <i className="fa-solid fa-copy"></i> Copy Báo Cáo Zalo
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!studentName.trim()) {
+                        setStudentName("Flyer Trainer");
+                      }
+                      playGameSFX("success");
+                      setShowProfileModal(false);
+                      syncToGoogleSheets("Đăng nhập bắt đầu học");
+                    }}
+                    className="py-3 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-game font-black text-xs shadow-lg"
+                  >
+                    Lưu & Bắt Đầu 🚀
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // 11. SPEAKING ARENA SUB-COMPONENT (BLIND SPEAKING + WORD-BY-WORD GRADING)
+    // =========================================================================
+    function SpeakingArenaPanel({
+      question,
+      monster,
+      isMega,
+      isRecording,
+      micSupported,
+      spokenInput,
+      setSpokenInput,
+      toggleRecording,
+      onGrade,
+      onShadowRetry,
+      arenaResult,
+      shadowingCompleted,
+      speakEnglish,
+      onNext
+    }) {
+      return (
+        <div className="bg-slate-900/95 border-2 border-rose-500/40 rounded-3xl p-4 space-y-4 shadow-2xl">
+          {/* Examiner Question Header (Model Answer Strictly Hidden Before Grading) */}
+          <div className="flex items-center justify-between gap-2 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-400 uppercase">
+                <i className="fa-solid fa-eye-slash"></i>
+                <span>Đáp án mẫu đang ẩn — Tự trả lời!</span>
+              </div>
+              <h3 className="font-game font-black text-lg text-white leading-snug">
+                "{question.q}"
+              </h3>
+              <p className="text-xs text-slate-400">🇻🇳 {question.vi}</p>
+            </div>
+
+            <button
+              onClick={() => speakEnglish(question.q, 0.92)}
+              className="w-12 h-12 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 flex flex-col items-center justify-center shrink-0 shadow-lg"
+              title="Giám khảo đọc câu hỏi"
+            >
+              <i className="fa-solid fa-volume-high text-base"></i>
+              <span className="text-[9px] font-black mt-0.5">Hỏi</span>
+            </button>
+          </div>
+
+          {/* Monster Opponent Visual */}
+          <div className="flex items-center justify-between bg-slate-950/50 px-3.5 py-2 rounded-2xl border border-slate-800/80">
+            <div className="flex items-center gap-2.5">
+              <MonsterSprite monster={monster} isMega={isMega} size={52} />
+              <div>
+                <div className="text-xs font-extrabold text-white">
+                  {isMega ? monster.megaName : monster.name}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  {arenaResult?.passed
+                    ? "✅ Đã vượt qua thử thách câu này!"
+                    : "Nói đạt ≥70% từ khóa để chiến thắng!"}
+                </div>
+              </div>
+            </div>
+            {arenaResult && (
+              <div className="text-right">
+                <div className="text-sm font-black text-amber-400">
+                  {"⭐".repeat(arenaResult.stars)}
+                </div>
+                <div className="text-[10px] font-bold text-slate-300">
+                  Chính xác {arenaResult.accuracy}%
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Microphone Button + Fallback Text Input */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleRecording}
+                className={`flex-1 py-3.5 px-4 rounded-2xl font-game font-black text-sm flex items-center justify-center gap-2 transition ${
+                  isRecording
+                    ? "bg-rose-600 text-white mic-recording"
+                    : "bg-gradient-to-r from-rose-500 to-pink-600 hover:brightness-110 text-white shadow-lg shadow-rose-600/30"
+                }`}
+              >
+                <i className={`fa-solid ${isRecording ? "fa-stop" : "fa-microphone"}`}></i>
+                <span>
+                  {isRecording
+                    ? "Đang nghe... Bấm để dừng"
+                    : micSupported
+                    ? "Bấm Ghi Âm Trả Lời 🎙️"
+                    : "Mic không khả dụng (Nhập chữ bên dưới)"}
+                </span>
+              </button>
+            </div>
+
+            {/* Fallback / Live Transcript Input */}
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1 px-1">
+                <span>Nội dung em nói (hoặc gõ dự phòng nếu điện thoại chặn mic):</span>
+                {spokenInput && (
+                  <button
+                    onClick={() => setSpokenInput("")}
+                    className="text-rose-400 font-bold"
+                  >
+                    Xóa
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={spokenInput}
+                onChange={(e) => setSpokenInput(e.target.value)}
+                rows={2}
+                placeholder="Giọng nói của em sẽ hiện tại đây, hoặc em có thể gõ câu trả lời tiếng Anh..."
+                className="w-full p-3 rounded-2xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-400 resize-none"
+              />
+            </div>
+
+            {!arenaResult ? (
+              <button
+                onClick={onGrade}
+                disabled={!spokenInput.trim()}
+                className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-game font-black text-sm shadow-lg transition"
+              >
+                ⚔️ Chấm Điểm & Kiểm Tra Lỗi
+              </button>
+            ) : (
+              /* WORD-BY-WORD GRADING RESULT & SHADOWING PANEL */
+              <div className="bg-slate-950/90 border border-indigo-400/40 rounded-2xl p-3.5 space-y-3 animate-pop">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-amber-300">
+                    🔍 Chấm từng từ (Xanh = Đúng | Đỏ = Thiếu/Sai):
+                  </span>
+                  <button
+                    onClick={() => speakEnglish(question.model, 0.88)}
+                    className="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-[11px] flex items-center gap-1"
+                  >
+                    <i className="fa-solid fa-volume-high"></i> Nghe mẫu
+                  </button>
+                </div>
+
+                {/* Word-by-word highlight chips */}
+                <div className="flex flex-wrap gap-1.5 bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                  {arenaResult.wordResults.map((wr, idx) => (
+                    <span
+                      key={idx}
+                      className={`px-2 py-0.5 rounded-lg text-sm font-bold ${
+                        wr.matched
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : "bg-rose-500/25 text-rose-300 border-b-2 border-rose-500"
+                      }`}
+                    >
+                      {wr.word}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="text-xs text-slate-200 leading-relaxed">
+                  {arenaResult.feedbackVi}
+                </p>
+
+                {/* Shadowing Retry + Next Question Buttons */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={onShadowRetry}
+                    className={`py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1 ${
+                      shadowingCompleted
+                        ? "bg-emerald-900/60 text-emerald-300 border border-emerald-500/40"
+                        : "bg-purple-600 hover:bg-purple-500 text-white shadow"
+                    }`}
+                  >
+                    <span>{shadowingCompleted ? "✅ Đã sửa Shadowing" : "🎙️ Nói lại Shadowing"}</span>
+                  </button>
+
+                  <button
+                    onClick={onNext}
+                    className="py-2.5 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1 shadow"
+                  >
+                    <span>Câu tiếp theo ➔</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
